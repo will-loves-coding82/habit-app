@@ -12,7 +12,7 @@ export async function DashboardAuthButton() {
 
     return  (
         <div className="flex items-center gap-4">
-            <p>Hey, {user!.user_metadata.username}!</p>
+            {/* <p>Hey, {user!.user_metadata.username}!</p> */}
             <LogoutButton/>
         </div>
     )

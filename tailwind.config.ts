@@ -8,7 +8,7 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
-    "./node_modules/@heroui/theme/dist/components/tabs.js"
+    "./node_modules/@heroui/theme/dist/components/(alert|avatar|card|checkbox|chip|date-picker|divider|dropdown|form|input|modal|progress|skeleton|tabs|toast|button|ripple|spinner|calendar|date-input|popover|menu).js"
   ],
   theme: {
     extend: {
@@ -31,7 +31,7 @@ export default {
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
+          DEFAULT: "var(--dark-blue)",
           foreground: "hsl(var(--secondary-foreground))",
         },
         muted: {
@@ -46,6 +46,7 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        success: "hsl(var(--success))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

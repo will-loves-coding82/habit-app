@@ -41,15 +41,29 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {username}
         }
       });
-      if (error) throw error;
+
+      if (error) {throw error};
+
+      const userId = data?.user?.id;
+      if (userId) {
+        const {error} = await supabase
+          .from("streaks")
+          .insert([{user_id: userId, streak: 0}])
+        
+        if (error) {
+          console.log("Error initializing streaks for user: ", error)
+        }
+      }
+
       router.push("/auth/sign-up-success");
+
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
