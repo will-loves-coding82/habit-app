@@ -1,5 +1,4 @@
-import { Habit } from "@/app/dashboard/types/schema-types";
-import { Days_One } from "next/font/google";
+import { Habit } from "@/app/dashboard/types";
 
 export function getStartOfWeek(date: Date) : Date {
 

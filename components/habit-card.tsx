@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react"
-import { Habit } from "@/app/dashboard/types/schema-types";
+import { Habit } from "@/app/dashboard/types";
 import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
 import {Alert} from "@heroui/alert";
 import {  Dropdown,  DropdownTrigger,  DropdownMenu,  DropdownSection,  DropdownItem} from "@heroui/dropdown";
@@ -16,7 +16,6 @@ export default function HabitCard(
     { habit, type, isDeleting, onCompleteHabit, onDeleteHabit } : 
     { habit: Habit, type: string,  isDeleting: boolean, onCompleteHabit: (habit: Habit, completed: boolean) => void, onDeleteHabit: (habit: Habit) => void }
 ) {
-
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const { resolvedTheme } = useTheme();
@@ -36,9 +35,9 @@ export default function HabitCard(
     return (
 
         <motion.div
-            className="z-10"
-            initial = {{opacity: 0, y: 50}}
-            animate={{ opacity: 1, y: 0}}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y:0 }}
+            exit={{ opacity: 0 }}
         >
             <Modal isOpen={isDeleteModalOpen && !isDeleting} onClose={() => setIsDeleteModalOpen(false)} className="bg-accent" radius="sm" isDismissable={false} >
                 <ModalContent>
@@ -75,7 +74,7 @@ export default function HabitCard(
               
             </Modal>
 
-        <Card className="w-full rounded-md bg-accent px-3" shadow="none">
+        <Card className="w-full rounded-md bg-accent px-3 z-0" shadow="none">
             <CardHeader>
                 <span className="flex items-center justify-between w-full gap-8 text-muted-foreground text-sm mt-1">
                     <div className="flex items-center">
@@ -93,7 +92,7 @@ export default function HabitCard(
                         </p>
 
                         { habit.is_complete && isCompletedOnTime && !isLate && (<p className="text-success px-2 py-[2px] bg-success/20 rounded-md">complete</p>)}
-                        { habit.is_complete && !isCompletedOnTime && isLate && (<p className="text-warning px-2 py-[2px] bg-warning/25 rounded-md">completed late</p>)}
+                        { habit.is_complete && !isCompletedOnTime && (<p className="text-warning px-2 py-[2px] bg-warning/25 rounded-md">completed late</p>)}
                         {isLate && <p className="text-danger px-2 py-[2px] bg-danger/25 rounded-md">late</p>}
 
                     </div>

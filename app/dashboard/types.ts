@@ -19,3 +19,9 @@ export interface Streak {
     user_id: string;
     streak: number;
 }
+
+
+export interface habitAction {
+    type: string;
+    habit: Habit;
+}
