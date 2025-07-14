@@ -8,7 +8,7 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
-    "./node_modules/@heroui/theme/dist/components/(alert|avatar|card|checkbox|chip|date-picker|divider|drawer|dropdown|form|input|modal|progress|skeleton|tabs|toast|button|ripple|spinner|calendar|date-input|popover|menu).js"
+    "./node_modules/@heroui/theme/dist/components/(alert|avatar|card|checkbox|chip|date-picker|divider|drawer|dropdown|form|input|modal|progress|scroll-shadow|skeleton|tabs|toast|button|ripple|spinner|calendar|date-input|popover|menu).js"
   ],
   theme: {
     extend: {

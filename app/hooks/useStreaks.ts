@@ -21,7 +21,7 @@ export function useStreaks(user: User | null) {
         const { data, error } = await supabase
             .from("streaks")
             .select("streak")
-            .eq("user_id", user!!.id)
+            .eq("user_uid", user!!.id)
             .limit(1)
 
         if (error) {
@@ -43,7 +43,7 @@ export function useStreaks(user: User | null) {
         const supabase = await createClient();
         const { error } = await supabase
             .from("streaks")
-            .insert({ streak: 0, user_id: user!!.id })
+            .insert({ streak: 0, user_uid: user!!.id })
 
         if (error) {
             console.log("error initializing streak: ", error);

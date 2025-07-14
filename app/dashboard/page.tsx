@@ -8,25 +8,24 @@ import { DatePicker } from "@heroui/date-picker";
 import { Input, Textarea } from "@heroui/input";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form } from "@heroui/form";
-import { useActionState, useCallback, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
-import { DateValue } from "@internationalized/date";
+import { DateValue, getLocalTimeZone, now } from "@internationalized/date";
 import { Avatar } from "@heroui/avatar";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
 import { addToast } from "@heroui/toast";
+import { ScrollShadow } from "@heroui/scroll-shadow";
 import { CircularProgress } from "@heroui/progress";
 import { createHabitAction, CreateHabitFormState } from "./actions";
 import { cn } from "@heroui/theme";
-import { Habit } from "./types";
+import { ChatMessage } from "./types";
 import HabitCard from "@/components/habit-card";
 import { Label } from "@radix-ui/react-label";
 import Link from "next/link";
 import { ArrowRight, BotMessageSquare, X } from "lucide-react";
-import { getEndOfWeek, getStartOfWeek } from "@/lib/functions";
-import { AnimatePresence, motion } from "framer-motion";
-import { useTheme } from "next-themes";
+import { AnimatePresence } from "framer-motion";
 import { useHabits } from "../hooks/useHabits";
 import { useStreaks } from "../hooks/useStreaks";
 
@@ -76,43 +75,59 @@ export default function DashboardPage() {
   });
 
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatId, setChatId] = useState<number | null>(null);
   const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState([])
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
 
   const handleChatSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+
     e.preventDefault();
 
     if (chatInput && chatInput.trim() !== "") {
 
-      const result = await fetch(location.origin + "/embedding", {
-        method: "POST",
-        body: JSON.stringify({
-          text: chatInput.replace(/\n/g, " "),
-        })
-      });
-
-      
-      const res = await result.json();
-
-      if (result.status == 200) {
-        const embedding = res.embedding;
-
-        const { data: documents } = await supabase.rpc("match_documents", {
-            query_embedding: embedding,
-            match_threshold: 0.4, // minimum similarity to embedding
-            match_count: 20
-          })
-
-        
-
-          console.log("matching documents: ", documents)
+      const trimmedInput = chatInput.trim();
+      const userMessage: ChatMessage = {
+        created_at: new Date().toLocaleString(),
+        role: "user",
+        content: trimmedInput,
+        chat_id: chatId!!
       }
 
-    
+
+      setChatMessages(prev => [...prev, userMessage])
+      setChatInput("");
+
+      const { data, error } = await supabase.functions.invoke("generate-ai-answer", {
+        body: JSON.stringify({
+          userPrompt: chatInput,
+          chatId: chatId,
+          userId: user!!.id,
+          timezone: getLocalTimeZone()
+        }),
+        method: 'POST'
+      });
+
+
+      if (error) {
+        console.log("Error generating ai response: ", error)
+      }
+      else {
+        const aiMessage: ChatMessage = {
+          created_at: new Date().toLocaleString(),
+          role: "assistant",
+          content: data.body.finalResponse, // or data.body.finalResponse.content if it's nested
+          chat_id: chatId!!
+        };
+
+        console.log(data.body.finalResponse)
+        setChatMessages(prev => [...prev, aiMessage])
+      }
     }
 
   }
+
 
   const handleChatInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
@@ -151,6 +166,89 @@ export default function DashboardPage() {
     setisLoadingUser(false);
   }
 
+  async function fetchChat(): Promise<number | null> {
+
+    const { data, error } = await supabase
+      .from("chats")
+      .select("id")
+      .eq("user_uid", user!!.id)
+      .maybeSingle()
+
+    if (error) {
+      addToast({
+        title: "Error",
+        description: "An error occurred while fetching chats.",
+        color: "danger",
+        classNames: {
+          base: cn(["mb-4 mr-4"])
+        }
+      });
+
+      return null;
+    }
+
+    console.log("User belongs to chatId: ", data?.id)
+    return data?.id ?? null;
+  }
+
+  const openChat = async () => {
+
+    if (chatMessages.length > 0 || chatId != null) {
+      return;
+    }
+
+    // check if user has a chat
+    const chat =  await fetchChat();
+
+    if (chat == null) {
+      const { error } = await supabase.from("chats")
+        .insert({
+          user_uid: user!!.id
+        })
+      if (error) {
+        addToast({
+          title: "An error occured creating your chat",
+          description: error.message,
+          color: "danger",
+          classNames: {
+            base: cn(["mb-4 mr-4"])
+          }
+        });
+      }
+      else {
+        // TODO: Create an edge function that will return the created chat id to avoid refetching
+        console.log("successfully created new chat")
+        const chat = await fetchChat();
+        setChatId(chat);
+      }
+
+    } else {
+
+      setChatId(chat);
+
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("chat_id", chat)
+
+      if (error) {
+        addToast({
+          title: "An error occured fetching messages",
+          description: error.message,
+          color: "danger",
+          classNames: {
+            base: cn(["mb-4 mr-4"])
+          }
+        });
+      }
+
+      else {
+        console.log("Chat messages: ", data)
+        setChatMessages(data)
+      }
+    }
+  }
+
 
   const refreshData = () => {
     clearForm();
@@ -169,10 +267,22 @@ export default function DashboardPage() {
     });
   }
 
+  const scrollToBottomOfChat = () => {
+    if (messagesEndRef) {
+      messagesEndRef.current?.scrollIntoView({behavior: "smooth"})
+    }
+  }
+
   useEffect(() => {
     fetchUserData();
   }, [])
 
+  
+  useEffect(()=> {
+    if (isChatOpen) {
+      scrollToBottomOfChat()
+    }
+  }, [isChatOpen, chatMessages])
 
 
   // Handle form submission results
@@ -199,7 +309,7 @@ export default function DashboardPage() {
         }
       });
     }
-    
+
     setIsAddingHabit(false);
   }, [formState])
 
@@ -222,7 +332,67 @@ export default function DashboardPage() {
   return (
 
     <>
-      <nav className="w-full flex justify-center border-b border-b-foreground/10 bg-background h-fit relative fixed" >
+      {isChatOpen &&
+
+        <Drawer
+          size="xl"
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          radius="none"
+          isDismissable={false}
+          hideCloseButton
+          shouldBlockScroll={true}
+          className="border-l border-l-foreground/10 bg-background z-[9999]"
+        >
+          <DrawerContent>
+            <DrawerHeader className="flex justify-between mr-2 items-center">
+              <h2>Chat with AI</h2>
+              <X size={16} onClick={() => setIsChatOpen(false)} className="hover:cursor-pointer" />
+            </DrawerHeader>
+
+            <DrawerBody>
+              <ScrollShadow hideScrollBar className="overflow-y-scroll flex flex-col gap-8 h-full">
+                {chatMessages.map((message, idx) => (
+
+                  <div className="flex flex-row" key={idx} ref={(idx == chatMessages.length -1) ? messagesEndRef : null}>
+                    {message.role == "assistant" && <BotMessageSquare className={`hover:cursor-pointer text-primary mr-2 bg-muted h-9 w-9 p-2 rounded-full`} />}
+                    <div className={`max-w-sm w-fit rounded-lg ${message.role == "assistant" ? "mr-auto bg-accent flex flex-start" : "ml-auto bg-secondary text-white flex flex-end text-right"}`}>
+                      <p className="mx-4 my-2">{message.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </ScrollShadow>
+            </DrawerBody>
+
+
+            <DrawerFooter>
+              <Form
+                onSubmit={(e) => { handleChatSubmit(e) }}
+                className="flex flex-row items-center w-screen gap-4">
+                <Input
+                  aria-label="search"
+                  className="w-full"
+                  id="prompt"
+                  name="prompt"
+                  type="text"
+                  placeholder="Type something"
+                  variant="bordered"
+                  radius="sm"
+                  required
+                  onChange={handleChatInputChange}
+                  value={chatInput}
+                />
+
+                <Button type="submit" className="w-fit">Send</Button>
+              </Form>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+
+      }
+
+
+      <nav className="w-full flex justify-center border-b border-b-foreground/10 bg-background h-fit " >
 
         <div className="w-full max-w-7xl flex justify-between bg-background items-center p-2 px-5 text-sm">
           <span className="flex gap-2 items-center">
@@ -236,7 +406,13 @@ export default function DashboardPage() {
 
             }
           </span>
-          <BotMessageSquare className={`hover:cursor-pointer text-primary`} size={20} onClick={() => setIsChatOpen(!isChatOpen)} />
+          <BotMessageSquare className={`hover:cursor-pointer  ${user ? "text-primary" : "text-muted-foreground" }`} size={20} onClick={ async() => {
+            if (user) {
+              await openChat()
+              setIsChatOpen(!isChatOpen);
+            }
+          }}
+          />
         </div>
 
       </nav>
@@ -302,7 +478,7 @@ export default function DashboardPage() {
               variant="light"
               color="default"
               className="flex flex-col mx-0 z-0"
-              classNames={{ cursor: "bg-accent rounded-md z-0", base: "z-0", tab: "z-0", tabContent: "z-0"}}
+              classNames={{ cursor: "bg-accent rounded-md z-0", base: "z-0", tab: "z-0", tabContent: "z-0" }}
               selectedKey={selected}
               onSelectionChange={(key) => setSelected(key.toString())}
             >
@@ -411,8 +587,8 @@ export default function DashboardPage() {
 
               <section className="flex flex-col gap-6 mt-8">
                 {/* Spread the map into an array <day,habits>[] pairs and render habits for each day */}
-                {[...weekHabits.entries()].map(([day, habits], index) => 
-                  
+                {[...weekHabits.entries()].map(([day, habits], index) =>
+
                   <div key={index}>
                     <span className="flex w-full justify-between">
                       <div className="flex gap-2 items-center">
@@ -435,55 +611,7 @@ export default function DashboardPage() {
         </div>
 
 
-        {isChatOpen &&
 
-          <Drawer
-            isOpen={isChatOpen}
-            onClose={() => setIsChatOpen(false)}
-            radius="none"
-            isDismissable={false}
-            hideCloseButton
-            shouldBlockScroll={true}
-            className="border-l border-l-foreground/10 bg-background"
-          >
-            <DrawerContent>
-              <DrawerHeader className="flex justify-between mr-2 items-center">
-                <h2>Chat with AI</h2>
-                <X size={16} onClick={() => setIsChatOpen(false)} className="hover:cursor-pointer" />
-              </DrawerHeader>
-
-              <DrawerBody>
-                <section className="overflow-y-scroll">
-
-                </section>
-              </DrawerBody>
-
-
-              <DrawerFooter>
-                <Form
-                  onSubmit={(e) => { handleChatSubmit(e) }}
-                  className="flex flex-row items-center w-screen gap-4">
-                  <Input
-                    aria-label="search"
-                    className="w-full"
-                    id="prompt"
-                    name="prompt"
-                    type="text"
-                    placeholder="Type something"
-                    variant="bordered"
-                    radius="sm"
-                    required
-                    onChange={handleChatInputChange}
-                    value={chatInput}
-                  />
-
-                  <Button type="submit" className="w-fit">Send</Button>
-                </Form>
-              </DrawerFooter>
-            </DrawerContent>
-          </Drawer>
-
-        }
 
 
       </section>

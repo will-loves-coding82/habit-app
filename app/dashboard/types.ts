@@ -25,3 +25,11 @@ export interface habitAction {
     type: string;
     habit: Habit;
 }
+
+
+export interface ChatMessage {
+    created_at: string,
+    role: string,
+    content: string,
+    chat_id: number
+}

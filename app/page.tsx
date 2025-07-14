@@ -18,7 +18,7 @@ export default function Home() {
         <nav className="w-full flex justify-center bg-background border-b border-b-foreground/10 h-12 fixed">
           <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
 
-              <Link href={"/"} className="text-base font-medium">Habit</Link>
+              <Link href={"/"} className="text-base font-medium">Stacked</Link>
               
               {/* <div className="mx-auto justify-start max-w-lg w-full">
                 <Link href={"/"} className="text-base">How it works</Link>
