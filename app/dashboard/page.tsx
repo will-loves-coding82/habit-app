@@ -8,7 +8,7 @@ import { DatePicker } from "@heroui/date-picker";
 import { Input, Textarea } from "@heroui/input";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form } from "@heroui/form";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { use, useActionState, useEffect, useRef, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { DateValue, getLocalTimeZone, now } from "@internationalized/date";
@@ -17,7 +17,7 @@ import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
 import { addToast } from "@heroui/toast";
 import { ScrollShadow } from "@heroui/scroll-shadow";
-import { CircularProgress } from "@heroui/progress";
+import { CircularProgress, Progress } from "@heroui/progress";
 import { createHabitAction, CreateHabitFormState } from "./actions";
 import { cn } from "@heroui/theme";
 import { ChatMessage } from "./types";
@@ -28,10 +28,14 @@ import { ArrowRight, BotMessageSquare, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useHabits } from "../hooks/useHabits";
 import { useStreaks } from "../hooks/useStreaks";
+import { useWindowSize } from "@uidotdev/usehooks";
+import { Divider } from "@heroui/divider";
 
 export default function DashboardPage() {
 
   const supabase = createClient();
+  const size = useWindowSize();
+
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setisLoadingUser] = useState(true);
   const [selected, setSelected] = useState("Today");
@@ -117,7 +121,7 @@ export default function DashboardPage() {
         const aiMessage: ChatMessage = {
           created_at: new Date().toLocaleString(),
           role: "assistant",
-          content: data.body.finalResponse, // or data.body.finalResponse.content if it's nested
+          content: data.body.finalResponse,
           chat_id: chatId!!
         };
 
@@ -127,7 +131,6 @@ export default function DashboardPage() {
     }
 
   }
-
 
   const handleChatInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
@@ -198,7 +201,7 @@ export default function DashboardPage() {
     }
 
     // check if user has a chat
-    const chat =  await fetchChat();
+    const chat = await fetchChat();
 
     if (chat == null) {
       const { error } = await supabase.from("chats")
@@ -269,7 +272,7 @@ export default function DashboardPage() {
 
   const scrollToBottomOfChat = () => {
     if (messagesEndRef) {
-      messagesEndRef.current?.scrollIntoView({behavior: "smooth"})
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
   }
 
@@ -277,8 +280,8 @@ export default function DashboardPage() {
     fetchUserData();
   }, [])
 
-  
-  useEffect(()=> {
+
+  useEffect(() => {
     if (isChatOpen) {
       scrollToBottomOfChat()
     }
@@ -324,13 +327,11 @@ export default function DashboardPage() {
       return habit.is_complete
     }).length
 
-
     return Math.ceil((numCompeleted / todayHabits.length) * 100)
   }
 
 
   return (
-
     <>
       {isChatOpen &&
 
@@ -354,7 +355,7 @@ export default function DashboardPage() {
               <ScrollShadow hideScrollBar className="overflow-y-scroll flex flex-col gap-8 h-full">
                 {chatMessages.map((message, idx) => (
 
-                  <div className="flex flex-row" key={idx} ref={(idx == chatMessages.length -1) ? messagesEndRef : null}>
+                  <div className="flex flex-row" key={idx} ref={(idx == chatMessages.length - 1) ? messagesEndRef : null}>
                     {message.role == "assistant" && <BotMessageSquare className={`hover:cursor-pointer text-primary mr-2 bg-muted h-9 w-9 p-2 rounded-full`} />}
                     <div className={`max-w-sm w-fit rounded-lg ${message.role == "assistant" ? "mr-auto bg-accent flex flex-start" : "ml-auto bg-secondary text-white flex flex-end text-right"}`}>
                       <p className="mx-4 my-2">{message.content}</p>
@@ -392,7 +393,7 @@ export default function DashboardPage() {
       }
 
 
-      <nav className="w-full flex justify-center border-b border-b-foreground/10 bg-background h-fit " >
+      <nav className="w-full flex justify-center border-b border-b-foreground/10 bg-background h-fit py-1 " >
 
         <div className="w-full max-w-7xl flex justify-between bg-background items-center p-2 px-5 text-sm">
           <span className="flex gap-2 items-center">
@@ -406,7 +407,7 @@ export default function DashboardPage() {
 
             }
           </span>
-          <BotMessageSquare className={`hover:cursor-pointer  ${user ? "text-primary" : "text-muted-foreground" }`} size={20} onClick={ async() => {
+          <BotMessageSquare className={`hover:cursor-pointer  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick={async () => {
             if (user) {
               await openChat()
               setIsChatOpen(!isChatOpen);
@@ -417,23 +418,23 @@ export default function DashboardPage() {
 
       </nav>
 
+
       <section className="flex w-full justify-evenly">
 
         <div className="flex-1 w-full max-w-3xl px-5 mx-auto flex flex-col pt-16 pb-20">
-
           <section className="flex flex-col gap-6" >
             <section className="mt-[-24px] flex">
               <h1 className="text-3xl font-semibold max-w-lg">Dashboard</h1>
             </section>
 
-            <section className="bg-card border border-accent border-3 p-4 rounded-lg mt-[-12px]">
-
-              <div className="flex flex-col justify-center md:justify-between gap-8 md:justify-between md:flex-row">
-                <div className="mx-auto">
-                  <h3 className="text-lg font-medium text-center md:text-left">Today's Progress</h3>
-                  <p className="text-muted-foreground text-sm text-center md:text-left">Stay on top of your game!</p>
+            {/* Desktop Dashboard Statistics  */}
+            {size.width!! >= 600 ?
+              <section className="flex bg-accent border border-accent border-3 p-4 rounded-lg mt-[-12px]">
+                <div className="mx-auto w-[200px] text-left">
+                  <h3 className="text-lg font-medium">Today's Progress</h3>
+                  <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
                   <CircularProgress
-                    className="mx-auto mt-2 md:mx-0 z-0"
+                    className=" mt-2 z-0"
                     classNames={{
                       svg: "w-24 h-24 drop-shadow-md z-0",
                       indicator: "stroke-darkBlue",
@@ -445,29 +446,76 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                <div className="mx-auto">
-                  <h3 className="text-lg font-medium text-center md:text-left">Total Habits</h3>
-                  <p className="text-muted-foreground text-sm text-center md:text-left">Unique habits you've created.</p>
-                  <div className="flex gap-2 items-center mx-auto md:mx-0 w-fit">
+                <div className="mx-auto  w-[200px] text-left">
+                  <h3 className="text-lg font-medium">Total Habits</h3>
+                  <p className="text-muted-foreground text-sm">Unique habits you've created.</p>
+                  <div className="flex gap-2 items-center w-fit">
                     <Link href={"/dashboard"} className="text-darkBlue">
                       Manage
                     </Link>
                     <ArrowRight size={12} />
                   </div>
 
-                  <p className="font-semibold text-6xl text-center mt-4 md:text-left">{totalHabits}</p>
+                  <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
                 </div>
 
 
-                <div className="mx-auto">
-                  <h3 className="text-lg font-medium text-center md:text-left">Current Streak</h3>
-                  <p className="text-muted-foreground text-sm text-center md:text-left max-w-[180px]">Complete your habits on time each day to raise your streak.</p>
-                  {hasStreak ? <p className="font-semibold text-6xl text-center mt-4 md:text-left">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
-
+                <div className="mx-auto  w-[200px] text-left">
+                  <h3 className="text-lg font-medium">Current Streak</h3>
+                  <p className="text-muted-foreground text-sm text-sm max-w-[180px]">Complete your habits on time each day to raise your streak.</p>
+                  {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
                 </div>
 
-              </div>
-            </section>
+              </section>
+
+              :
+
+              
+              <section className="grid grid-cols-2 grid-rows-2 gap-4">
+
+                <div className=" bg-accent border border-accent border-3 rounded-lg w-full text-left p-0 col-span-2">
+                
+                  <div className="p-4">
+                    <h3 className="text-lg font-medium">Today's Progress</h3>
+                    <p className="text-muted-foreground text-sm">Stay on top of your game!</p> 
+                  </div>
+
+                  <Divider className="w-full"/>
+                
+                  <Progress
+                    className="z-0 p-4 pb-6"
+                    size="md"
+                    color="secondary"
+                    classNames={{
+                      value: "text-xl font-semibold text-muted-foreground ml-1",
+                    }}
+                    showValueLabel={true}
+                    value={calculateProgressForToday()}
+                    />
+                </div>
+
+                <div className="p-4 border-accent border-3 rounded-lg text-left">
+                  <h3 className="text-lg font-medium">Total Habits</h3>
+                  <p className="text-muted-foreground text-sm">Unique habits you've created.</p>
+                  <div className="flex gap-2 items-center w-fit">
+                    <Link href={"/dashboard"} className="text-darkBlue">
+                      Manage
+                    </Link>
+                    <ArrowRight size={12} />
+                  </div>
+
+                  <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
+                </div>
+
+
+                <div className="p-4 border-accent border-3 rounded-lg text-left">
+                  <h3 className="text-lg font-medium">Current Streak</h3>
+                  <p className="text-muted-foreground text-sm text-sm max-w-[180px]">Complete your habits on time each day to raise your streak.</p>
+                  {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
+                </div>
+              </section>
+
+            }
           </section>
 
           <section className="flex items-center gap-3 justify-between mt-12">
@@ -489,7 +537,7 @@ export default function DashboardPage() {
 
             <span className="flex w-fit justify-between gap-4">
               {/* <Button className="bg-secondary hover:bg-secondary text-white">Ask AI</Button> */}
-              <Button variant="default" size="default" onClick={() => setIsModalOpen(true)}>
+              <Button variant="default" size="sm" onClick={() => setIsModalOpen(true)}>
                 Add Habit
               </Button>
             </span>
@@ -560,10 +608,10 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="flex justify-end w-full mb-4">
-                      <Button variant="outline" type="reset" onClick={() => setIsModalOpen(false)} className="bg-accent">
+                      <Button variant="outline" type="reset" size="sm" onClick={() => setIsModalOpen(false)} className="bg-accent">
                         Cancel
                       </Button>
-                      <Button type="submit" className="ml-2">
+                      <Button type="submit" size="sm" className="ml-2">
                         {isAddingHabit ? "Adding..." : "Add Habit"}
                       </Button>
                     </div>

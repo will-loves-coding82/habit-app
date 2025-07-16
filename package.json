@@ -37,6 +37,7 @@
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "@types/common-tags": "^1.8.4",
+    "@uidotdev/usehooks": "^2.4.1",
     "ai": "^4.3.17",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
