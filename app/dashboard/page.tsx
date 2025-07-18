@@ -8,7 +8,7 @@ import { DatePicker } from "@heroui/date-picker";
 import { Input, Textarea } from "@heroui/input";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form } from "@heroui/form";
-import { use, useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { DateValue, getLocalTimeZone, now } from "@internationalized/date";
@@ -407,6 +407,7 @@ export default function DashboardPage() {
 
             }
           </span>
+
           <BotMessageSquare className={`hover:cursor-pointer  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick={async () => {
             if (user) {
               await openChat()
@@ -428,8 +429,8 @@ export default function DashboardPage() {
             </section>
 
             {/* Desktop Dashboard Statistics  */}
-            {size.width!! >= 600 ?
-              <section className="flex bg-accent border border-accent border-3 p-4 rounded-lg mt-[-12px]">
+
+              <section className="hidden md:flex bg-accent border border-accent border-3 p-4 rounded-lg mt-[-12px]">
                 <div className="mx-auto w-[200px] text-left">
                   <h3 className="text-lg font-medium">Today's Progress</h3>
                   <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
@@ -468,10 +469,10 @@ export default function DashboardPage() {
 
               </section>
 
-              :
+              
 
               
-              <section className="grid grid-cols-2 grid-rows-2 gap-4">
+              <section className="grid grid-cols-2 grid-rows-2 gap-4 md:hidden">
 
                 <div className=" bg-accent border border-accent border-3 rounded-lg w-full text-left p-0 col-span-2">
                 
@@ -480,7 +481,7 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground text-sm">Stay on top of your game!</p> 
                   </div>
 
-                  <Divider className="w-full"/>
+                  {/* <Divider className="w-full"/> */}
                 
                   <Progress
                     className="z-0 p-4 pb-6"
@@ -515,7 +516,7 @@ export default function DashboardPage() {
                 </div>
               </section>
 
-            }
+            
           </section>
 
           <section className="flex items-center gap-3 justify-between mt-12">

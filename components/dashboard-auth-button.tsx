@@ -11,8 +11,7 @@ export async function DashboardAuthButton() {
     } = await supabase.auth.getUser();  
 
     return  (
-        <div className="flex items-center gap-4">
-            {/* <p>Hey, {user!.user_metadata.username}!</p> */}
+        <div className="flex items-center gap-4 hover:cursor-pointer">
             <LogoutButton/>
         </div>
     )

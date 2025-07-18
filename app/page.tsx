@@ -1,45 +1,95 @@
-import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
 import { Hero } from "@/components/hero";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
-import { Label } from "@radix-ui/react-dropdown-menu";
-import { Input } from "postcss";
+import { Brain, Calendar, ChartLine } from "lucide-react";
+import Image from "next/image";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center">
+    <main className="min-h-screen flex flex-col items-center overflow-y-auto">
 
-      <div className="flex-1 w-full flex flex-col gap-20 items-center">
+      <div className="w-full flex flex-col gap-20 items-center">
 
-        <nav className="w-full flex justify-center bg-background border-b border-b-foreground/10 h-14 fixed">
+        <nav className="w-full flex justify-center bg-background/90 backdrop-blur-xl border-b border-b-foreground/10  h-14 fixed">
           <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
-
+            <span className="flex gap-2 items-center">
+              {/* <Image src="/logo.png" alt="stacked logo" width={24} height={24} /> */}
               <Link href={"/"} className="text-base font-medium">Stacked</Link>
-              
-              {/* <div className="mx-auto justify-start max-w-lg w-full">
-                <Link href={"/"} className="text-base">How it works</Link>
-              </div> */}
+            </span>
             <AuthButton />
           </div>
         </nav>
 
 
-        <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5 mt-24">
+        <main className="flex flex-col gap-20 p-0 mt-24 w-full">
+
+        
           <Hero />
 
-          <main className="flex-1 flex flex-col gap-6 px-4 h-full">
-            <h2 className="font-medium text-2xl mb-4 text-center">How it Works</h2>
-            {/* {hasEnvVars ? <SignUpUserSteps /> : <ConnectSupabaseSteps />} */}
-          </main>
+          {/* Feature Overview */}
+          <section className="p-5">
+            <div className="w-full max-w-5xl p-8 mx-auto mt-20 mb-20 h-fit items-center rounded-lg lg:px-0">
+              <h2 className="font-medium text-4xl">Stacked makes habits simple.</h2>
 
-        </div>
+              <div className="flex flex-col justify-between mt-8 gap-4 lg:flex-row md:mt-16 gap-12" >
+
+                <div className="flex flex-col gap-4 text-left bg-accent p-8 rounded-lg">
+                  <span className="p-3 rounded-full bg-white w-fit"><ChartLine color="black" size={24}/></span>
+                  <span>
+                    <p className="text-xl font-medium">Streamlined dashboard</p>
+                    <p className="text-muted-foreground mt-1 text-sm">View your statistics and habits in one location.</p>
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-4 bg-accent p-8 rounded-lg">
+                    <span className="p-3 rounded-full bg-white w-fit"><Calendar color="black" size={24}/></span>
+                    <span>
+                      <p className="text-xl font-medium">Stay consistent</p>
+                      <p className="text-muted-foreground mt-1 text-sm">Complete your habits on time each day to raise your streaks.</p>
+                    </span>
+                </div>
+
+                  <div className="flex flex-col gap-4 bg-accent p-8 rounded-lg ">
+                    <span className="p-3 rounded-full bg-white w-fit"><Brain color="black" size={24}/></span>
+                    <span>
+                      <p className="text-xl font-mediu">Interactive AI</p>
+                      <p className="text-muted-foreground mt-1 text-sm">Stacked is powered by ChatGPT to help you gather deeper insight into your habits.</p>
+                    </span>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          <section className="w-full bg-accent h-fit py-20 mt-20 mb-20 text-center">
+            <h2 className="font-medium px-5 text-center text-4xl md:text-6xl">How it works</h2>
+            <p className="max-w-lg mx-auto md:mt-6 p-5 text-muted-foreground">
+              Stacked operates on top of a serverless architecture using Supabase, driving automated workflows that 
+              become the habits you see appear each day and week. We also bring the power of ChatGPT at your doorstep so you 
+              can ask AI about your data.
+            </p>
+
+            <Image src="/chat-messages.png" alt="chat messages" width={700} height={400} className="mx-auto mt-12 px-8" />
+
+          </section>
 
 
-        <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
+          <section className="w-full text-center mt-20">
+            <h2 className="text-center text-6xl font-medium">Get motivated!</h2>
+            <p className="text-muted-foreground">Start tracking your habit today</p>
+            <div className="flex mx-auto w-fit mt-8">
+              <AuthButton />
+            </div>
+
+
+          </section>
+
+
+        </main>
+
+
+        <footer className="w-full flex items-center justify-center border-t mx-auto mt-20 text-center text-xs gap-8 py-16">
           <p>
             Powered by{" "}
             <a
@@ -57,3 +107,6 @@ export default function Home() {
     </main>
   );
 }
+
+
+

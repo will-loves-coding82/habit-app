@@ -1,81 +1,60 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { DashboardAuthButton } from "@/components/dashboard-auth-button";
-import { Modal, ModalContent } from "@heroui/modal";
-import {Divider} from "@heroui/divider"
-import {addToast, ToastProvider} from "@heroui/toast";
 import Providers from "./providers";
-import { Dropdown, DropdownTrigger, DropdownItem } from "@heroui/dropdown";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-// import { DropdownMenu } from "@radix-ui/react-dropdown-menu";
-import { ChevronDown, CircleEllipsis, Hamburger, HamburgerIcon, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 
 export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
   return (
 
-    <main >
-       <div className="flex-1 w-full flex flex-col items-center">
+    <main>
+      <div className="flex-1 w-full flex flex-col items-center">
 
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-14 bg-background">
+        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-14">
           <div className="w-full max-w-7xl flex justify-between items-center p-3 px-5 text-sm">
-              <Link href={"/"} className="text-base font-medium">Habit</Link>
 
-              <span className="hidden md:flex w-full mx-24 flex gap-16">
-                <Link href={"/dashboard"} className="text-base">Dashboard</Link>
-                <Link href={"/dashboard/profile"} className="text-base">Profile</Link>
-              </span>
+            <span className="flex gap-2 items-center w-[180px]">
+              <Link href={"/"} className="text-base font-medium">Stacked</Link>
+            </span>
 
-
-              <div className="flex items-center gap-4">
-                <div className="flex justify-end md:hidden w-full flex-end">
-                  <DropdownMenu >
-                    <DropdownMenuTrigger> 
-                      <Menu size={24}  className="bg-muted p-1 text-primary w-6 h-6 p-1 rounded-md border-b border-b-foreground/10" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuLabel>Menu</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <Link href={"/dashboard"} className="text-sm">Dashboard</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Link href={"/dashboard/profile"} className="text-sm">Profile</Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                <DashboardAuthButton />
-
-              </div>
-              
+            <DropdownMenu >
+              <DropdownMenuTrigger>
+                <Menu size={24} className="bg-muted p-1 text-primary w-6 h-6 p-1 rounded-md border-b border-b-foreground/10" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Menu</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Link href={"/dashboard"} className="text-sm">Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href={"/dashboard/profile"} className="text-sm">Profile</Link>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem>
+                  <DashboardAuthButton/>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </nav>
-        
+
 
         <Providers>
-          {children}  
+          {children}
         </Providers>
 
         <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">

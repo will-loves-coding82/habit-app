@@ -12,19 +12,17 @@ export async function AuthButton() {
 
   return user ? (
     <div className="flex items-center gap-4">
-      {/* Hey, {user.user_metadata.username}! */}
       <Button asChild variant="default" size="sm" className="bg-darkBlue text-white hover:bg-darkBlue">
         <Link href="/dashboard">Dashboard</Link>
       </Button>
-      {/* <LogoutButton /> */}
     </div>
   ) : (
     <div className="flex gap-2">
-      <Button asChild variant={"outline"}>
+      <Button asChild variant={"outline"} size="sm">
         <Link href="/auth/login">Sign in</Link>
       </Button>
       
-      <Button asChild variant={"default"}>
+      <Button asChild variant={"default"} size="sm">
         <Link href="/auth/sign-up">Sign up</Link>
       </Button>
     </div>

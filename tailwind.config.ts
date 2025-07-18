@@ -1,5 +1,6 @@
 import {heroui} from '@heroui/theme';
 import type { Config } from "tailwindcss";
+import scrollbarHide from 'tailwind-scrollbar-hide';
 
 export default {
   darkMode: ["class"],
@@ -66,5 +67,7 @@ export default {
 
     },
   },
-  plugins: [require("tailwindcss-animate"),heroui()],
+  plugins: [
+    require("tailwindcss-animate"),heroui(), scrollbarHide
+  ],
 } satisfies Config;
