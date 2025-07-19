@@ -16,10 +16,7 @@ export function useHabits(user: User | null) {
     const [todayHabits, setTodayHabits] = useState<Habit[]>([]);
     const [weekHabits, setWeekHabits] = useState<Map<string, Habit[]>>(new Map());
 
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+
 
 
     useEffect(() => {
@@ -47,12 +44,17 @@ export function useHabits(user: User | null) {
 
 
     const fetchTodayHabits = useCallback(async () => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set time to the beginning of today
+
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
         const { data, error } = await supabase
             .from("habits")
             .select("*")
             .eq("user_uid", user?.id)
-            .gte("due_date", start.toISOString())
-            .lte("due_date", end.toISOString())
+            .gte("due_date", today.toISOString())
+            .lt("due_date", tomorrow.toISOString())
             .order("due_date", { ascending: false });
 
         if (error) {
@@ -65,7 +67,9 @@ export function useHabits(user: User | null) {
                 }
             });
         }
+
         else {
+            console.log("Today habits: ", data)
             setTodayHabits(data);
         }
     }, [user])
@@ -73,15 +77,15 @@ export function useHabits(user: User | null) {
 
     const fetchHabitsThisWeek = useCallback(async () => {
         const date = new Date();
-        const start = getStartOfWeek(date).toISOString();
-        const end = getEndOfWeek(date).toISOString();
+        const weekStart = getStartOfWeek(date).toISOString();
+        const weekEnd = getEndOfWeek(date).toISOString();
 
         const { data, error } = await supabase
             .from("habits")
             .select("*")
             .eq("user_uid", user?.id)
-            .gte("due_date", start)
-            .lte("due_date", end)
+            .gte("due_date", weekStart)
+            .lte("due_date", weekEnd)
             .order("due_date", { ascending: false })
 
         if (error) {

@@ -430,7 +430,7 @@ export default function DashboardPage() {
 
             {/* Desktop Dashboard Statistics  */}
 
-              <section className="hidden md:flex bg-accent border border-accent border-3 p-4 rounded-lg mt-[-12px]">
+              <section className="hidden md:flex light:bg-accent light:border-accent border-1 dark:shadow-md dark:shadow-muted p-4 rounded-lg mt-[-12px]">
                 <div className="mx-auto w-[200px] text-left">
                   <h3 className="text-lg font-medium">Today's Progress</h3>
                   <p className="text-muted-foreground text-sm">Stay on top of your game!</p>

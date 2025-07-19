@@ -37,7 +37,8 @@ export default function HabitCard(
         <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y:0 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, scale: 0 }}
+            layout
         >
             <Modal isOpen={isDeleteModalOpen && !isDeleting} onClose={() => setIsDeleteModalOpen(false)} className="bg-accent" radius="sm" isDismissable={false} >
                 <ModalContent>
@@ -91,10 +92,11 @@ export default function HabitCard(
                             }).replace("at", "")}
                         </p>
 
-                        { habit.is_complete && isCompletedOnTime && !isLate && (<p className="text-success px-2 py-[2px] bg-success/20 rounded-md">complete</p>)}
-                        { habit.is_complete && !isCompletedOnTime && (<p className="text-warning px-2 py-[2px] bg-warning/25 rounded-md">completed late</p>)}
-                        {isLate && <p className="text-danger px-2 py-[2px] bg-danger/25 rounded-md">late</p>}
-
+                                { habit.is_complete && isCompletedOnTime && !isLate && 
+                                    <motion.p key="complete" initial={{scale: 0}} animate={{scale: 1}}  exit={{ scale: 0, opacity: 0}} layout className="text-success px-2 py-[2px] bg-success/20 rounded-md">complete</motion.p>
+                                }
+                                { habit.is_complete && !isCompletedOnTime && (<p className="text-warning px-2 py-[2px] bg-warning/25 text-warning rounded-md">completed late</p>)}
+                                { isLate && <p className="text-danger px-2 py-[2px] bg-danger/25 rounded-md">late</p>}
                     </div>
 
                     <Dropdown className="bg-accent" backdrop="blur" radius="sm">
