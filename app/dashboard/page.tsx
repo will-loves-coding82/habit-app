@@ -1,5 +1,6 @@
 "use client";
 
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Tab, Tabs } from "@heroui/tabs";
@@ -17,29 +18,30 @@ import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
 import { addToast } from "@heroui/toast";
 import { ScrollShadow } from "@heroui/scroll-shadow";
-import { CircularProgress, Progress } from "@heroui/progress";
+import { Progress } from "@heroui/progress";
 import { createHabitAction, CreateHabitFormState } from "./actions";
 import { cn } from "@heroui/theme";
 import { ChatMessage } from "./types";
 import HabitCard from "@/components/habit-card";
 import { Label } from "@radix-ui/react-label";
-import Link from "next/link";
-import { ArrowRight, BotMessageSquare, X } from "lucide-react";
+import { BarChart, BotMessageSquare, Flame, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useHabits } from "../hooks/useHabits";
 import { useStreaks } from "../hooks/useStreaks";
-import { useWindowSize } from "@uidotdev/usehooks";
-import { Divider } from "@heroui/divider";
+import { CustomTooltip } from '@/components/ui/chart-tooltip';
+
 
 export default function DashboardPage() {
 
   const supabase = createClient();
-  const size = useWindowSize();
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setisLoadingUser] = useState(true);
   const [selected, setSelected] = useState("Today");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+
 
   const {
     isAddingHabit,
@@ -47,11 +49,9 @@ export default function DashboardPage() {
     totalHabits,
     todayHabits,
     weekHabits,
+    completionHistory,
+    refreshHabits,
     setIsAddingHabit,
-    setIsDeletingHabit,
-    fetchTotalHabits,
-    fetchHabitsThisWeek,
-    fetchTodayHabits,
     onCompleteHabit,
     onDeleteHabit
   } = useHabits(user);
@@ -59,9 +59,6 @@ export default function DashboardPage() {
   const {
     streak,
     hasStreak,
-    setStreak,
-    setHasStreak,
-    fetchStreak,
     initializeStreak
   } = useStreaks(user);
 
@@ -255,10 +252,7 @@ export default function DashboardPage() {
 
   const refreshData = () => {
     clearForm();
-    fetchTodayHabits();
-    fetchHabitsThisWeek();
-    fetchTotalHabits();
-    fetchStreak();
+    refreshHabits();
   }
 
   const clearForm = () => {
@@ -333,6 +327,93 @@ export default function DashboardPage() {
 
   return (
     <>
+
+      {
+        isStatsOpen &&
+        <Drawer
+          size="3xl"
+          isOpen={isStatsOpen}
+          onClose={() => setIsStatsOpen(false)}
+          radius="none"
+          isDismissable={false}
+          hideCloseButton
+          shouldBlockScroll={true}
+          className="border-l border-l-foreground/10 bg-background z-[9999]"
+        >
+          <DrawerContent>
+            <DrawerHeader className="flex justify-between mr-2 items-center">
+              <h2>Statistics</h2>
+              <X size={16} onClick={() => setIsStatsOpen(false)} className="hover:cursor-pointer" />
+            </DrawerHeader>
+
+            <DrawerBody>
+              <section className="flex flex-col sm:grid sm:grid-flow-cols sm:grid-cols-3 sm:grid-rows-2 gap-4 sm:max-h-[320px]">
+
+                <div className="flex flex-col col-span-2 bg-card rounded-md p-4">
+                  <h3 className="text-lg font-medium">Today's Progress</h3>
+                  <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
+                  <Progress
+                    size="lg"
+                    radius="none"
+                    color="success"
+                    classNames={{
+                      track: "rounded-xs rounded-sm bg-accent",
+                      value: "text-xl font-semibold text-muted-foreground w-full text-right align-end",
+                      indicator: "rounded-sm"
+                    }}
+                    showValueLabel={true}
+                    value={calculateProgressForToday()}
+                  />
+                </div>
+
+                <div className="h-32 sm:flex sm:flex-col justify-between sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-3 col-start-3">
+                  <article>
+                    <h3 className="text-lg font-medium">Completion History</h3>
+                    <p className="text-muted-foreground text-sm">7 days</p>
+                  </article>
+
+                  <ResponsiveContainer width="100%" height="60%" className="py-4">
+                    <LineChart width={300} height={100} data={completionHistory}>
+                      <XAxis dataKey="day" hide />
+                      <Tooltip cursor={false} content={<CustomTooltip active={false} payload={[]} label={""} />} />
+                      <Line type="monotone" dataKey="count" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+
+
+
+                </div>
+
+                <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
+                  <span className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">Total Habits</h3>
+
+                    <p className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">manage</p>
+                  </span>
+                  <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
+
+                </div>
+
+                <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
+                  <span className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium">Streak</h3>
+                    <div className="p-2 bg-warning/25 rounded-full items-center">
+                      <Flame size={20} className="text-warning" />
+                    </div>
+                  </span>
+                  {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
+                </div>
+
+
+              </section>
+
+
+            </DrawerBody>
+
+          </DrawerContent>
+        </Drawer>
+      }
+
       {isChatOpen &&
 
         <Drawer
@@ -408,13 +489,18 @@ export default function DashboardPage() {
             }
           </span>
 
-          <BotMessageSquare className={`hover:cursor-pointer  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick={async () => {
-            if (user) {
-              await openChat()
-              setIsChatOpen(!isChatOpen);
-            }
-          }}
-          />
+          <span className="flex items-center gap-8">
+
+            <BarChart className={`hover:cursor-pointer sm:hidden  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick = {async () => setIsStatsOpen(true)} />
+
+            <BotMessageSquare className={`hover:cursor-pointer  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick={async () => {
+              if (user) {
+                await openChat()
+                setIsChatOpen(!isChatOpen);
+              }
+            }}
+            />
+          </span>
         </div>
 
       </nav>
@@ -429,94 +515,68 @@ export default function DashboardPage() {
             </section>
 
             {/* Desktop Dashboard Statistics  */}
+            <section className="flex flex-col sm:grid sm:grid-flow-cols sm:grid-cols-3 sm:grid-rows-2 gap-4 sm:max-h-[320px]">
 
-              <section className="hidden md:flex light:bg-accent light:border-accent border-1 dark:shadow-md dark:shadow-muted p-4 rounded-lg mt-[-12px]">
-                <div className="mx-auto w-[200px] text-left">
-                  <h3 className="text-lg font-medium">Today's Progress</h3>
-                  <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
-                  <CircularProgress
-                    className=" mt-2 z-0"
-                    classNames={{
-                      svg: "w-24 h-24 drop-shadow-md z-0",
-                      indicator: "stroke-darkBlue",
-                      value: "text-xl font-semibold text-muted-foreground ml-1",
-                    }}
-                    showValueLabel={true}
-                    strokeWidth={2}
-                    value={calculateProgressForToday()}
-                  />
-                </div>
+              <div className="flex flex-col col-span-2 bg-card rounded-md p-4">
+                <h3 className="text-lg font-medium">Today's Progress</h3>
+                <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
+                <Progress
+                  size="lg"
+                  radius="none"
+                  color="success"
+                  classNames={{
+                    track: "rounded-xs rounded-sm bg-accent",
+                    value: "text-xl font-semibold text-muted-foreground w-full text-right align-end",
+                    indicator: "rounded-sm"
+                  }}
+                  showValueLabel={true}
+                  value={calculateProgressForToday()}
+                />
+              </div>
 
-                <div className="mx-auto  w-[200px] text-left">
+              <div className="hidden h-32 sm:flex sm:flex-col justify-between sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-3 col-start-3">
+                <article>
+                  <h3 className="text-lg font-medium">Completion History</h3>
+                  <p className="text-muted-foreground text-sm">7 days</p>
+                </article>
+
+                <ResponsiveContainer width="100%" height="60%" className="py-4">
+                  <LineChart width={300} height={100} data={completionHistory}>
+                    <XAxis dataKey="day" hide />
+                    <Tooltip cursor={false} content={<CustomTooltip active={false} payload={[]} label={""} />} />
+                    <Line type="monotone" dataKey="count" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+
+
+
+              </div>
+
+              <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
+                <span className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">Total Habits</h3>
-                  <p className="text-muted-foreground text-sm">Unique habits you've created.</p>
-                  <div className="flex gap-2 items-center w-fit">
-                    <Link href={"/dashboard"} className="text-darkBlue">
-                      Manage
-                    </Link>
-                    <ArrowRight size={12} />
+
+                  <p className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">manage</p>
+                </span>
+                <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
+
+              </div>
+
+              <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
+                <span className="flex justify-between items-center">
+                  <h3 className="text-lg font-medium">Streak</h3>
+                  <div className="p-2 bg-warning/25 rounded-full items-center">
+                    <Flame size={20} className="text-warning" />
                   </div>
-
-                  <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
-                </div>
-
-
-                <div className="mx-auto  w-[200px] text-left">
-                  <h3 className="text-lg font-medium">Current Streak</h3>
-                  <p className="text-muted-foreground text-sm text-sm max-w-[180px]">Complete your habits on time each day to raise your streak.</p>
-                  {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
-                </div>
-
-              </section>
-
-              
-
-              
-              <section className="grid grid-cols-2 grid-rows-2 gap-4 md:hidden">
-
-                <div className=" bg-accent border border-accent border-3 rounded-lg w-full text-left p-0 col-span-2">
-                
-                  <div className="p-4">
-                    <h3 className="text-lg font-medium">Today's Progress</h3>
-                    <p className="text-muted-foreground text-sm">Stay on top of your game!</p> 
-                  </div>
-
-                  {/* <Divider className="w-full"/> */}
-                
-                  <Progress
-                    className="z-0 p-4 pb-6"
-                    size="md"
-                    color="secondary"
-                    classNames={{
-                      value: "text-xl font-semibold text-muted-foreground ml-1",
-                    }}
-                    showValueLabel={true}
-                    value={calculateProgressForToday()}
-                    />
-                </div>
-
-                <div className="p-4 border-accent border-3 rounded-lg text-left">
-                  <h3 className="text-lg font-medium">Total Habits</h3>
-                  <p className="text-muted-foreground text-sm">Unique habits you've created.</p>
-                  <div className="flex gap-2 items-center w-fit">
-                    <Link href={"/dashboard"} className="text-darkBlue">
-                      Manage
-                    </Link>
-                    <ArrowRight size={12} />
-                  </div>
-
-                  <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
-                </div>
+                </span>
+                {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
+              </div>
 
 
-                <div className="p-4 border-accent border-3 rounded-lg text-left">
-                  <h3 className="text-lg font-medium">Current Streak</h3>
-                  <p className="text-muted-foreground text-sm text-sm max-w-[180px]">Complete your habits on time each day to raise your streak.</p>
-                  {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
-                </div>
-              </section>
+            </section>
 
-            
+
+
           </section>
 
           <section className="flex items-center gap-3 justify-between mt-12">
@@ -524,10 +584,9 @@ export default function DashboardPage() {
             <Tabs
               key="tournament_type"
               aria-label="Options"
-              variant="light"
               color="default"
               className="flex flex-col mx-0 z-0"
-              classNames={{ cursor: "bg-accent rounded-md z-0", base: "z-0", tab: "z-0", tabContent: "z-0" }}
+              classNames={{ cursor: "rounded-md z-0", tabList: "rounded-lg bg-accent" }}
               selectedKey={selected}
               onSelectionChange={(key) => setSelected(key.toString())}
             >
@@ -596,7 +655,6 @@ export default function DashboardPage() {
                       />
 
 
-                      {/* <Checkbox className="text-white" radius="sm">Repeats Weekly</Checkbox> */}
                       <div className="flex gap-3 ml-[2px]">
                         <Checkbox id="weekly" className="border-muted-foreground" checked={formData.is_weekly} onCheckedChange={(checked) => {
                           setFormData((prevData) => ({
@@ -669,3 +727,84 @@ export default function DashboardPage() {
   );
 }
 
+{/* <section className="hidden md:flex light:bg-accent light:border-accent border-1 dark:shadow-md dark:shadow-muted p-4 rounded-lg mt-[-12px]">
+                <div className="mx-auto w-[200px] text-left">
+                  <h3 className="text-lg font-medium">Today's Progress</h3>
+                  <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
+                  <CircularProgress
+                    className=" mt-2 z-0"
+                    classNames={{
+                      svg: "w-24 h-24 drop-shadow-md z-0",
+                      indicator: "stroke-secondary",
+                      value: "text-xl font-semibold text-muted-foreground ml-1",
+                    }}
+                    showValueLabel={true}
+                    strokeWidth={2}
+                    value={calculateProgressForToday()}
+                  />
+                </div>
+
+                <div className="mx-auto  w-[200px] text-left">
+                  <h3 className="text-lg font-medium">Total Habits</h3>
+                  <p className="text-muted-foreground text-sm">Unique habits you've created.</p>
+                  <div className="flex gap-2 items-center w-fit">
+                    <Link href={"/dashboard"} className="text-darkBlue">
+                      Manage
+                    </Link>
+                    <ArrowRight size={12} />
+                  </div>
+
+                  <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
+                </div>
+
+
+                <div className="mx-auto  w-[200px] text-left">
+                  <h3 className="text-lg font-medium">Current Streak</h3>
+                  <p className="text-muted-foreground text-sm text-sm max-w-[180px]">Complete your habits on time each day to raise your streak.</p>
+                  {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
+                </div>
+
+              </section> */}
+
+//        <section className="grid grid-cols-2 grid-rows-2 gap-4 md:hidden">
+
+//   <div className="bg-card rounded-lg w-full text-left p-0 col-span-2">
+
+//     <div className="p-4">
+//       <h3 className="text-lg font-medium">Today's Progress</h3>
+//       <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
+//     </div>
+
+//     {/* <Divider className="w-full"/> */}
+//     <Progress
+//       className="z-0 p-4 pb-6"
+//       size="sm"
+//       color="secondary"
+//       classNames={{
+//         value: "text-xl font-semibold text-muted-foreground ml-1",
+//       }}
+//       showValueLabel={true}
+//       value={calculateProgressForToday()}
+//     />
+//   </div>
+
+//   <div className="p-4 border-accent border-3 rounded-lg text-left">
+//     <h3 className="text-lg font-medium">Total Habits</h3>
+//     <p className="text-muted-foreground text-sm">Unique habits you've created.</p>
+//     <div className="flex gap-2 items-center w-fit">
+//       <Link href={"/dashboard"} className="text-darkBlue">
+//         Manage
+//       </Link>
+//       <ArrowRight size={12} />
+//     </div>
+
+//     <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
+//   </div>
+
+
+//   <div className="p-4 border-accent border-3 rounded-lg text-left">
+//     <h3 className="text-lg font-medium">Current Streak</h3>
+//     <p className="text-muted-foreground text-sm text-sm max-w-[180px]">Complete your habits on time each day to raise your streak.</p>
+//     {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
+//   </div>
+// </section>

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Habit } from "../dashboard/types";
+import { CompletionCountPerDay, Habit } from "../dashboard/types";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { addToast } from "@heroui/toast";
 import { cn } from "@heroui/theme";
 import { getEndOfWeek, getStartOfWeek } from "@/lib/functions";
+import { Query, QueryClient, useMutation, useQuery } from "@tanstack/react-query";
+
 
 
 export function useHabits(user: User | null) {
@@ -15,21 +17,118 @@ export function useHabits(user: User | null) {
     const [totalHabits, setTotalHabits] = useState(0);
     const [todayHabits, setTodayHabits] = useState<Habit[]>([]);
     const [weekHabits, setWeekHabits] = useState<Map<string, Habit[]>>(new Map());
+    const [completionHistory, setCompletionHistory] = useState<any[]>([]);
 
-
-
-
+    
     useEffect(() => {
-
         const fetchData = () => {
             if (user) {
                 fetchTotalHabits();
                 fetchTodayHabits();
                 fetchHabitsThisWeek();
+                fetchCompletionHistory();
             }
         }
         fetchData();
     }, [user]);
+
+
+    const refreshHabits = () => {
+        fetchCompletionHistory();
+        fetchTodayHabits();
+        fetchHabitsThisWeek();
+        fetchTotalHabits();
+    }
+
+
+    function calculateBaseWeekDays() : string[] {
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const lastWeek = new Date(today);
+        lastWeek.setDate(today.getDate() - 6);
+
+        let list = []
+
+        for (let i = 0; i < 7; i++) {
+            let lastWeekName = lastWeek.toLocaleString("en-US", {
+                weekday: "short"
+            })
+
+            console.log("setting base week day: ", lastWeekName)
+            list.push(lastWeekName)
+            lastWeek.setDate(lastWeek.getDate() + 1)
+        }
+
+        return list
+    }
+
+
+    // Rolling window of habits from past 7 days
+    const fetchCompletionHistory= async() => {
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const tomorrow = new Date(today.getDate() + 1)
+
+        const lastWeek = new Date(today);
+        lastWeek.setDate(today.getDate() - 6);
+
+
+        const {data, error} = await supabase
+            .from("habits")
+            .select("due_date, is_complete")
+            .eq("user_uid", user?.id)
+            .gte("due_date", lastWeek.toISOString())
+            // .lte("due_date", tomorrow.toISOString())
+            .order("due_date", { ascending: true })
+
+        if (error) {
+            console.log("error getting habits over past week: ", error)
+        }
+
+        else {
+            console.log("raw completion data: ", data)
+
+            const mapOfCounts = new Map<string, number>();
+
+            data.forEach(row => {
+                const day = new Date(row.due_date).toLocaleString("en-US", {
+                    weekday: "short"
+                })
+                console.log("setting date: ", day)
+                const count = mapOfCounts.get(day)
+                if (!count && row.is_complete) {
+                    mapOfCounts.set(day, 1)
+                }
+                else if (count) {
+                    mapOfCounts.set(day, count + 1)
+                }
+            })
+
+
+            // Add placeholder values for missing days
+            const baseWeekDays = calculateBaseWeekDays();
+
+            baseWeekDays.forEach(day => {
+            if (!mapOfCounts.has(day)) {
+                mapOfCounts.set(day, 0);
+            }
+            });
+
+            // Format the list in ascending order of days 
+            console.log("base week days: ", baseWeekDays)           
+            const listOfCounts = baseWeekDays.map(day => ({
+                day: day,
+                count: mapOfCounts.get(day) || 0,
+            }));
+
+            console.log("completion history: ", listOfCounts)    
+            setCompletionHistory(listOfCounts)
+        }
+    }
 
 
     const fetchTotalHabits = useCallback(async () => {
@@ -49,6 +148,7 @@ export function useHabits(user: User | null) {
 
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
+
         const { data, error } = await supabase
             .from("habits")
             .select("*")
@@ -124,6 +224,9 @@ export function useHabits(user: User | null) {
     const onCompleteHabit = useCallback(async (habit: Habit, is_complete: boolean) => {
 
         const completed_date = is_complete ? new Date().toISOString() : null;
+        const todayNumber = Number(new Date(0,0,0,0).getDay())
+        
+        console.log("todayNumber", todayNumber)
 
         const { error } = await supabase
             .from("habits")
@@ -132,6 +235,12 @@ export function useHabits(user: User | null) {
 
         if (!error) {
 
+            // Update the completion history graph for today
+            setCompletionHistory(prev => {
+                return prev.map((item, index) => 
+                    index === (6-todayNumber) ? { ...item, count: (is_complete ? item.count + 1  : (item.count >= 1 ? item.count - 1 : 0))} : item
+                );
+            });
             
             setTodayHabits((prev) =>
                 prev?.map((h) =>
@@ -195,6 +304,8 @@ export function useHabits(user: User | null) {
         }
 
         else {
+            refreshHabits();
+
             addToast({
                 title: "Habit Deleted",
                 description: "Successfully deleted habit!",
@@ -203,24 +314,26 @@ export function useHabits(user: User | null) {
                 }
             });
 
-            let day = new Date(habit.due_date)
-            let dayOfWeek = day.toLocaleString("en-US", {
-                weekday: "long"
-            })
+            // let day = new Date(habit.due_date)
+            // let dayOfWeek = day.toLocaleString("en-US", {
+            //     weekday: "long"
+            // })
 
-            setWeekHabits((prev) => {
-                if (prev.has(dayOfWeek)) {
-                    const filtered = prev.get(dayOfWeek)!.filter(h => (h.id != habit.id) || (h.parent_id != habit.parent_id));
-                    if (filtered.length == 0) {
-                        prev.delete(dayOfWeek);
-                    }
-                    prev.set(dayOfWeek, filtered);
-                }
+            // setWeekHabits((prev) => {
+            //     if (prev.has(dayOfWeek)) {
+            //         const filtered = prev.get(dayOfWeek)!.filter(h => (h.id != habit.id) || (h.parent_id != habit.parent_id));
+            //         if (filtered.length == 0) {
+            //             prev.delete(dayOfWeek);
+            //         }
+            //         prev.set(dayOfWeek, filtered);
+            //     }
                 
-                return prev;
-            });
+            //     return prev;
+            // });
 
-            setTodayHabits(prev => prev.filter((h) => (h.id !== habit.id) || (h.parent_id != habit.parent_id)))
+            // setTodayHabits(prev => prev.filter((h) => (h.id !== habit.id) || (h.parent_id != habit.parent_id)))
+
+
 
         }
 
@@ -230,12 +343,17 @@ export function useHabits(user: User | null) {
 
 
 
+
+    
+
     return {
         isAddingHabit,
         isDeletingHabit,
         totalHabits,
         todayHabits,
         weekHabits,
+        completionHistory,
+        refreshHabits,
         setTodayHabits,
         setWeekHabits,
         setIsAddingHabit,
@@ -248,4 +366,6 @@ export function useHabits(user: User | null) {
     };
 
 
-}
+} 
+
+

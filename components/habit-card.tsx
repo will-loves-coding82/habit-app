@@ -75,7 +75,7 @@ export default function HabitCard(
               
             </Modal>
 
-        <Card className="w-full rounded-md bg-accent px-3 z-0" shadow="none">
+        <Card className="w-full rounded-md bg-card px-3 z-0" shadow="none">
             <CardHeader>
                 <span className="flex items-center justify-between w-full gap-8 text-muted-foreground text-sm mt-1">
                     <div className="flex items-center">

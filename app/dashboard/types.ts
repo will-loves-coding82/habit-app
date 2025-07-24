@@ -1,6 +1,7 @@
 
 
 export interface Habit{
+    [x: string]: any;
     created_date: string;
     id: number;
     parent_id: number | null;
@@ -32,4 +33,14 @@ export interface ChatMessage {
     role: string,
     content: string,
     chat_id: number
+}
+
+export type CompletionCountPerDay = {
+    due_date: string;
+    count_complete: number
+}
+
+
+export type Error = {
+    message: string
 }

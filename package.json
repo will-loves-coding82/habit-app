@@ -36,6 +36,7 @@
     "@radix-ui/react-tabs": "^1.1.12",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
+    "@tanstack/react-query": "^5.83.0",
     "@types/common-tags": "^1.8.4",
     "@uidotdev/usehooks": "^2.4.1",
     "ai": "^4.3.17",
@@ -49,7 +50,9 @@
     "next-themes": "^0.4.6",
     "openai": "^5.8.3",
     "react": "^19.1.0",
+    "react-charts": "^2.0.0-beta.7",
     "react-dom": "^19.1.0",
+    "recharts": "^3.1.0",
     "strip-indent": "^4.0.0",
     "tailwind-merge": "^3.3.0",
     "tailwind-scrollbar-hide": "^4.0.0"
