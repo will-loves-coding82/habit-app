@@ -1,12 +1,12 @@
+"use client";
+
 import { useCallback, useEffect, useState } from "react";
-import { CompletionCountPerDay, Habit } from "../dashboard/types";
+import { Habit } from "../dashboard/types";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { addToast } from "@heroui/toast";
 import { cn } from "@heroui/theme";
 import { getEndOfWeek, getStartOfWeek } from "@/lib/functions";
-import { Query, QueryClient, useMutation, useQuery } from "@tanstack/react-query";
-
 
 
 export function useHabits(user: User | null) {
@@ -14,19 +14,24 @@ export function useHabits(user: User | null) {
     const supabase = createClient();
     const [isAddingHabit, setIsAddingHabit] = useState(false);
     const [isDeletingHabit, setIsDeletingHabit] = useState(false);
+
     const [totalHabits, setTotalHabits] = useState(0);
     const [todayHabits, setTodayHabits] = useState<Habit[]>([]);
     const [weekHabits, setWeekHabits] = useState<Map<string, Habit[]>>(new Map());
+    const [uniqueHabits, setUniqueHabits] = useState<Habit[]>([]);
+    const [isLoadingUniqueHabits, setIsLoadingUniqueHabits] = useState(false);
+
     const [completionHistory, setCompletionHistory] = useState<any[]>([]);
 
     
     useEffect(() => {
         const fetchData = () => {
-            if (user) {
+            if (user !== null) {
                 fetchTotalHabits();
                 fetchTodayHabits();
                 fetchHabitsThisWeek();
                 fetchCompletionHistory();
+                fetchUniqueHabits();
             }
         }
         fetchData();
@@ -38,6 +43,7 @@ export function useHabits(user: User | null) {
         fetchTodayHabits();
         fetchHabitsThisWeek();
         fetchTotalHabits();
+        fetchUniqueHabits();
     }
 
 
@@ -63,7 +69,7 @@ export function useHabits(user: User | null) {
 
         return list
     }
-
+    
 
     // Rolling window of habits from past 7 days
     const fetchCompletionHistory= async() => {
@@ -82,7 +88,6 @@ export function useHabits(user: User | null) {
             .select("due_date, is_complete")
             .eq("user_uid", user?.id)
             .gte("due_date", lastWeek.toISOString())
-            // .lte("due_date", tomorrow.toISOString())
             .order("due_date", { ascending: true })
 
         if (error) {
@@ -131,6 +136,28 @@ export function useHabits(user: User | null) {
     }
 
 
+    const fetchUniqueHabits = useCallback(async() => {
+        setIsLoadingUniqueHabits(true)
+
+        const { data, error } =  await supabase
+            .from("habits")
+            .select("*")
+            .eq("user_uid", user?.id)
+            .eq("is_parent", true)
+
+        if (error) {
+            console.log("Error fetching all unique habits: ", error)
+        }
+        else {
+            console.log("unique habits: ", data)
+            setUniqueHabits(data)
+        }
+
+        setIsLoadingUniqueHabits(false)
+        
+    }, [user])
+
+
     const fetchTotalHabits = useCallback(async () => {
         const { data, error } = await supabase.rpc("count_distinct_habits")
         if (error) {
@@ -144,7 +171,7 @@ export function useHabits(user: User | null) {
 
     const fetchTodayHabits = useCallback(async () => {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Set time to the beginning of today
+        today.setHours(0, 0, 0, 0);
 
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -339,25 +366,23 @@ export function useHabits(user: User | null) {
 
         setIsDeletingHabit(false);
     }, []);
-
-
-
-
-
     
 
     return {
         isAddingHabit,
         isDeletingHabit,
+        isLoadingUniqueHabits,
         totalHabits,
         todayHabits,
         weekHabits,
+        uniqueHabits,
         completionHistory,
         refreshHabits,
         setTodayHabits,
         setWeekHabits,
         setIsAddingHabit,
         setIsDeletingHabit,
+        fetchUniqueHabits,
         fetchTotalHabits,
         fetchHabitsThisWeek,
         fetchTodayHabits,

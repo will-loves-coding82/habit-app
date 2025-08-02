@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, League_Spartan } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { HabitProvider} from "@/app/context/context";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -40,7 +41,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <HabitProvider>
+            {children}
+          </HabitProvider>
         </ThemeProvider>
       </body>
     </html>

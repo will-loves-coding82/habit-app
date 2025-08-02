@@ -1,6 +1,6 @@
 "use client";
 
-import { LineChart, Line, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { LineChart, XAxis, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Tab, Tabs } from "@heroui/tabs";
@@ -9,7 +9,7 @@ import { DatePicker } from "@heroui/date-picker";
 import { Input, Textarea } from "@heroui/input";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form } from "@heroui/form";
-import { useActionState, useEffect, useRef, useState } from "react";
+import React, { memo, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { DateValue, getLocalTimeZone, now } from "@internationalized/date";
@@ -21,7 +21,7 @@ import { ScrollShadow } from "@heroui/scroll-shadow";
 import { Progress } from "@heroui/progress";
 import { createHabitAction, CreateHabitFormState } from "./actions";
 import { cn } from "@heroui/theme";
-import { ChatMessage } from "./types";
+import { ChatMessage, Habit } from "./types";
 import HabitCard from "@/components/habit-card";
 import { Label } from "@radix-ui/react-label";
 import { BarChart, BotMessageSquare, Flame, X } from "lucide-react";
@@ -29,6 +29,7 @@ import { AnimatePresence } from "framer-motion";
 import { useHabits } from "../hooks/useHabits";
 import { useStreaks } from "../hooks/useStreaks";
 import { CustomTooltip } from '@/components/ui/chart-tooltip';
+import { useHabitContext } from '../context/context';
 
 
 export default function DashboardPage() {
@@ -54,7 +55,7 @@ export default function DashboardPage() {
     setIsAddingHabit,
     onCompleteHabit,
     onDeleteHabit
-  } = useHabits(user);
+  } = useHabitContext();
 
   const {
     streak,
@@ -80,6 +81,19 @@ export default function DashboardPage() {
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+
+  const CompletionHistoryChart = memo(function CompletionHistoryChart({completionHistory}: {completionHistory: Habit[]}) {
+    return (
+      <ResponsiveContainer width="100%" height="60%" className="py-4">
+        <LineChart width={300} height={100} data={completionHistory}>
+          <XAxis dataKey="day" hide />
+          <Tooltip cursor={false} content={<CustomTooltip active={false} payload={[]} label={""} />} />
+          <Line type="monotone" dataKey="count" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    )
+  })
 
 
   const handleChatSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -306,7 +320,6 @@ export default function DashboardPage() {
         }
       });
     }
-
     setIsAddingHabit(false);
   }, [formState])
 
@@ -317,7 +330,7 @@ export default function DashboardPage() {
       return 0
     }
 
-    let numCompeleted = todayHabits.filter((habit) => {
+    let numCompeleted = todayHabits.filter((habit: Habit) => {
       return habit.is_complete
     }).length
 
@@ -379,9 +392,6 @@ export default function DashboardPage() {
                       <Line type="monotone" dataKey="count" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
-
-
-
                 </div>
 
                 <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
@@ -391,7 +401,6 @@ export default function DashboardPage() {
                     <p className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">manage</p>
                   </span>
                   <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
-
                 </div>
 
                 <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
@@ -403,13 +412,8 @@ export default function DashboardPage() {
                   </span>
                   {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
                 </div>
-
-
               </section>
-
-
             </DrawerBody>
-
           </DrawerContent>
         </Drawer>
       }
@@ -445,7 +449,6 @@ export default function DashboardPage() {
                 ))}
               </ScrollShadow>
             </DrawerBody>
-
 
             <DrawerFooter>
               <Form
@@ -485,14 +488,12 @@ export default function DashboardPage() {
               </Skeleton>
               :
               <p className="text-sm font-muted-foreground">{user?.user_metadata.username.toLowerCase()}</p>
-
             }
           </span>
 
           <span className="flex items-center gap-8">
 
             <BarChart className={`hover:cursor-pointer sm:hidden  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick = {async () => setIsStatsOpen(true)} />
-
             <BotMessageSquare className={`hover:cursor-pointer  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick={async () => {
               if (user) {
                 await openChat()
@@ -540,16 +541,16 @@ export default function DashboardPage() {
                   <p className="text-muted-foreground text-sm">7 days</p>
                 </article>
 
-                <ResponsiveContainer width="100%" height="60%" className="py-4">
+                {/* <ResponsiveContainer width="100%" height="60%" className="py-4">
                   <LineChart width={300} height={100} data={completionHistory}>
                     <XAxis dataKey="day" hide />
                     <Tooltip cursor={false} content={<CustomTooltip active={false} payload={[]} label={""} />} />
                     <Line type="monotone" dataKey="count" strokeWidth={2} dot={false} />
                   </LineChart>
-                </ResponsiveContainer>
+                  
+                </ResponsiveContainer> */}
 
-
-
+                <CompletionHistoryChart completionHistory={completionHistory}/>
               </div>
 
               <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
@@ -559,7 +560,6 @@ export default function DashboardPage() {
                   <p className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">manage</p>
                 </span>
                 <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
-
               </div>
 
               <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
@@ -571,12 +571,7 @@ export default function DashboardPage() {
                 </span>
                 {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
               </div>
-
-
             </section>
-
-
-
           </section>
 
           <section className="flex items-center gap-3 justify-between mt-12">
@@ -594,7 +589,6 @@ export default function DashboardPage() {
               <Tab key="This Week" title="This Week" className="w-fit" />
             </Tabs>
 
-
             <span className="flex w-fit justify-between gap-4">
               {/* <Button className="bg-secondary hover:bg-secondary text-white">Ask AI</Button> */}
               <Button variant="default" size="sm" onClick={() => setIsModalOpen(true)}>
@@ -602,13 +596,11 @@ export default function DashboardPage() {
               </Button>
             </span>
 
-
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} className="bg-accent" radius="sm" isDismissable={false} >
               <ModalContent>
                 <ModalHeader>Add a habit</ModalHeader>
                 <ModalBody className="flex flex-col gap-8 mt-[-24px]">
                   <p className="text-muted-foreground text-sm">Habits repeat daily by default. Change this setting to weekly down below.</p>
-
 
                   <Form action={formAction} onSubmit={() => { setIsAddingHabit(true) }} className="mt-[-12px]">
                     <div className="flex flex-col gap-4 w-full">
@@ -654,7 +646,6 @@ export default function DashboardPage() {
                         value={formData.due_date}
                       />
 
-
                       <div className="flex gap-3 ml-[2px]">
                         <Checkbox id="weekly" className="border-muted-foreground" checked={formData.is_weekly} onCheckedChange={(checked) => {
                           setFormData((prevData) => ({
@@ -676,8 +667,6 @@ export default function DashboardPage() {
                     </div>
                   </Form>
                 </ModalBody>
-
-
               </ModalContent>
             </Modal>
           </section>
@@ -685,7 +674,7 @@ export default function DashboardPage() {
           <AnimatePresence>
             {selected === "Today" ?
               <ul className="flex flex-col gap-4 mt-8">
-                {todayHabits?.map((habit) =>
+                {todayHabits?.map((habit: Habit) =>
                   <HabitCard key={habit.id} habit={habit} type="today" isDeleting={isDeletingHabit} onCompleteHabit={onCompleteHabit} onDeleteHabit={onDeleteHabit} />
                 )}
               </ul>
@@ -704,7 +693,7 @@ export default function DashboardPage() {
                       <p className="text-muted-foreground text-sm">{habits.length} {habits.length !== 1 ? "habits" : "habit"}</p>
                     </span>
                     <section className="flex flex-col gap-4 mt-4">
-                      {habits?.map((habit) => (
+                      {habits?.map((habit: Habit) => (
                         <HabitCard key={habit.id} habit={habit} isDeleting={isDeletingHabit} type="this_week" onCompleteHabit={onCompleteHabit} onDeleteHabit={onDeleteHabit} />
                       ))}
                     </section>
@@ -716,95 +705,7 @@ export default function DashboardPage() {
           </AnimatePresence>
 
         </div>
-
-
-
-
-
       </section>
-
     </>
   );
 }
-
-{/* <section className="hidden md:flex light:bg-accent light:border-accent border-1 dark:shadow-md dark:shadow-muted p-4 rounded-lg mt-[-12px]">
-                <div className="mx-auto w-[200px] text-left">
-                  <h3 className="text-lg font-medium">Today's Progress</h3>
-                  <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
-                  <CircularProgress
-                    className=" mt-2 z-0"
-                    classNames={{
-                      svg: "w-24 h-24 drop-shadow-md z-0",
-                      indicator: "stroke-secondary",
-                      value: "text-xl font-semibold text-muted-foreground ml-1",
-                    }}
-                    showValueLabel={true}
-                    strokeWidth={2}
-                    value={calculateProgressForToday()}
-                  />
-                </div>
-
-                <div className="mx-auto  w-[200px] text-left">
-                  <h3 className="text-lg font-medium">Total Habits</h3>
-                  <p className="text-muted-foreground text-sm">Unique habits you've created.</p>
-                  <div className="flex gap-2 items-center w-fit">
-                    <Link href={"/dashboard"} className="text-darkBlue">
-                      Manage
-                    </Link>
-                    <ArrowRight size={12} />
-                  </div>
-
-                  <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
-                </div>
-
-
-                <div className="mx-auto  w-[200px] text-left">
-                  <h3 className="text-lg font-medium">Current Streak</h3>
-                  <p className="text-muted-foreground text-sm text-sm max-w-[180px]">Complete your habits on time each day to raise your streak.</p>
-                  {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
-                </div>
-
-              </section> */}
-
-//        <section className="grid grid-cols-2 grid-rows-2 gap-4 md:hidden">
-
-//   <div className="bg-card rounded-lg w-full text-left p-0 col-span-2">
-
-//     <div className="p-4">
-//       <h3 className="text-lg font-medium">Today's Progress</h3>
-//       <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
-//     </div>
-
-//     {/* <Divider className="w-full"/> */}
-//     <Progress
-//       className="z-0 p-4 pb-6"
-//       size="sm"
-//       color="secondary"
-//       classNames={{
-//         value: "text-xl font-semibold text-muted-foreground ml-1",
-//       }}
-//       showValueLabel={true}
-//       value={calculateProgressForToday()}
-//     />
-//   </div>
-
-//   <div className="p-4 border-accent border-3 rounded-lg text-left">
-//     <h3 className="text-lg font-medium">Total Habits</h3>
-//     <p className="text-muted-foreground text-sm">Unique habits you've created.</p>
-//     <div className="flex gap-2 items-center w-fit">
-//       <Link href={"/dashboard"} className="text-darkBlue">
-//         Manage
-//       </Link>
-//       <ArrowRight size={12} />
-//     </div>
-
-//     <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
-//   </div>
-
-
-//   <div className="p-4 border-accent border-3 rounded-lg text-left">
-//     <h3 className="text-lg font-medium">Current Streak</h3>
-//     <p className="text-muted-foreground text-sm text-sm max-w-[180px]">Complete your habits on time each day to raise your streak.</p>
-//     {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
-//   </div>
-// </section>
