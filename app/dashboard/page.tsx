@@ -30,6 +30,7 @@ import { useStreaks } from "../hooks/useStreaks";
 import { CustomTooltip } from '@/components/ui/chart-tooltip';
 import { useHabitContext } from '../context/context';
 import Link from 'next/link';
+import { CompletionHistoryLineChart } from '@/components/completion-history';
 
 
 export default function DashboardPage() {
@@ -100,19 +101,6 @@ export default function DashboardPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-
-  // TODO: There's an inherent bug where the line chart will redraw even when unrelated parent state variables change
-  const CompletionHistoryChart = memo(function CompletionHistoryChart({completionHistory}: {completionHistory: CompletionHistory}) {
-    return (
-      <ResponsiveContainer width="100%" height="60%" className="py-4">
-        <LineChart width={300} height={100} data={completionHistory}>
-          <XAxis dataKey="day" hide />
-          <Tooltip cursor={false} content={<CustomTooltip active={false} payload={[]} label={""} />} />
-          <Line type="monotone" dataKey="count" strokeWidth={2} dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
-    )
-  })
 
 
   const handleChatSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -658,17 +646,8 @@ export default function DashboardPage() {
                   <h3 className="text-lg font-medium">Completion History</h3>
                   <p className="text-muted-foreground text-sm">7 days</p>
                 </article>
-
-                {/* <ResponsiveContainer width="100%" height="60%" className="py-4">
-                  <LineChart width={300} height={100} data={completionHistory}>
-                    <XAxis dataKey="day" hide />
-                    <Tooltip cursor={false} content={<CustomTooltip active={false} payload={[]} label={""} />} />
-                    <Line type="monotone" dataKey="count" strokeWidth={2} dot={false} />
-                  </LineChart>
-                  
-                </ResponsiveContainer> */}
-
-                <CompletionHistoryChart completionHistory={completionHistory}/>
+                
+                <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits}/>
               </div>
 
               <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
