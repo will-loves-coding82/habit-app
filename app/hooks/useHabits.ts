@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Habit } from "../dashboard/types";
+import { CompletionHistory, Habit } from "../types";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { addToast } from "@heroui/toast";
@@ -12,6 +12,7 @@ import { getEndOfWeek, getStartOfWeek } from "@/lib/functions";
 export function useHabits(user: User | null) {
 
     const supabase = createClient();
+
     const [isAddingHabit, setIsAddingHabit] = useState(false);
     const [isDeletingHabit, setIsDeletingHabit] = useState(false);
     const [isLoadingUniqueHabits, setIsLoadingUniqueHabits] = useState(false);
@@ -21,7 +22,7 @@ export function useHabits(user: User | null) {
     const [todayHabits, setTodayHabits] = useState<Habit[]>([]);
     const [weekHabits, setWeekHabits] = useState<Map<string, Habit[]>>(new Map());
     const [uniqueHabits, setUniqueHabits] = useState<Habit[]>([]);
-    const [completionHistory, setCompletionHistory] = useState<any[]>([]);
+    const [completionHistory, setCompletionHistory] = useState<CompletionHistory>([]);
 
     
     useEffect(() => {
@@ -43,7 +44,7 @@ export function useHabits(user: User | null) {
         fetchTotalHabits();
         fetchUniqueHabits();
     }
-
+    
 
     function calculateBaseWeekDays() : string[] {
 
@@ -246,11 +247,10 @@ export function useHabits(user: User | null) {
     }, [user])
 
 
-    const onUpdateHabit = useCallback(async(habit: Habit, new_title: string, new_description: string) => {
+    const onUpdateHabit = useCallback(async(habit: Habit | null, new_title: string | null, new_description: string | null) => {
         setIsUpdatingHabit(true)
         
-        
-        const parentId = (habit.parent_id == null) ? habit.id : habit.parent_id;
+        const parentId = (habit?.parent_id == null) ? habit?.id : habit.parent_id;
         console.log(`Updating habit with title ${new_title} and description ${new_description}`)
 
         const { data, error } = await supabase
@@ -349,6 +349,37 @@ export function useHabits(user: User | null) {
         }
     }, [])
 
+    const onDeleteUniqueHabit = useCallback(async (habit: Habit) => {
+        setIsDeletingHabit(true);
+
+        const { error } = await supabase.rpc("delete_habit", { parent: habit.id })
+         if (error) {
+            addToast({
+                title: "Error",
+                description: "An error occurred while deleting your habit.",
+                color: "danger",
+                classNames: {
+                    base: cn(["mb-4 mr-4"])
+                }
+            });
+        }
+
+        else {
+            // setUniqueHabits(prev => 
+            //     prev.filter(h => h.id !== habit.id)
+            // )
+
+            refreshHabits();
+
+            addToast({
+                title: "Habit Deleted",
+                description: "Successfully deleted habit!",
+                classNames: {
+                    base: cn(["mb-4 mr-4"])
+                }
+            });
+        }
+    },[])
 
     const onDeleteHabit = useCallback(async (habit: Habit) => {
         setIsDeletingHabit(true);
@@ -369,6 +400,7 @@ export function useHabits(user: User | null) {
         }
 
         else {
+
             refreshHabits();
 
             addToast({
@@ -379,27 +411,25 @@ export function useHabits(user: User | null) {
                 }
             });
 
-            // let day = new Date(habit.due_date)
-            // let dayOfWeek = day.toLocaleString("en-US", {
-            //     weekday: "long"
-            // })
+            /* let day = new Date(habit.due_date)
+            let dayOfWeek = day.toLocaleString("en-US", {
+                weekday: "long"
+            })
 
-            // setWeekHabits((prev) => {
-            //     if (prev.has(dayOfWeek)) {
-            //         const filtered = prev.get(dayOfWeek)!.filter(h => (h.id != habit.id) || (h.parent_id != habit.parent_id));
-            //         if (filtered.length == 0) {
-            //             prev.delete(dayOfWeek);
-            //         }
-            //         prev.set(dayOfWeek, filtered);
-            //     }
+            setWeekHabits((prev) => {
+                if (prev.has(dayOfWeek)) {
+                    const filtered = prev.get(dayOfWeek)!.filter(h => (h.id != habit.id) || (h.parent_id != habit.parent_id));
+                    if (filtered.length == 0) {
+                        prev.delete(dayOfWeek);
+                    }
+                    prev.set(dayOfWeek, filtered);
+                }
                 
-            //     return prev;
-            // });
+                return prev;
+            });
 
-            // setTodayHabits(prev => prev.filter((h) => (h.id !== habit.id) || (h.parent_id != habit.parent_id)))
-
-
-
+            setTodayHabits(prev => prev.filter((h) => (h.id !== habit.id) || (h.parent_id != habit.parent_id)))
+ */
         }
 
         setIsDeletingHabit(false);
@@ -427,6 +457,7 @@ export function useHabits(user: User | null) {
         fetchTodayHabits,
         onCompleteHabit,
         onDeleteHabit,
+        onDeleteUniqueHabit,
         onUpdateHabit
     };
 

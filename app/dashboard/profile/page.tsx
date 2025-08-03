@@ -6,7 +6,7 @@ import { Key, useActionState, useCallback, useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from "@heroui/table";
 import { useHabitContext } from "@/app/context/context";
-import { Habit } from "../types";
+import { Habit } from "../../types";
 import { Skeleton } from "@heroui/skeleton";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 import { Ellipsis, Pen, Upload } from "lucide-react";
@@ -29,10 +29,6 @@ export default function ProfilePage() {
     const [user, setUser] = useState<User | null>(null);
 
     const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
-
-    // const [newTitle, setNewTitle] = useState<string>("");
-    // const [newDescription, setNewDescription] = useState<string>( "");
-
     const [formData, setFormData] = useState<{
         title: string | null,
         description: string | null,
@@ -41,17 +37,14 @@ export default function ProfilePage() {
         description: null
     });
 
-
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-    const { uniqueHabits, isLoadingUser, isLoadingUniqueHabits } = useHabitContext();
+    const { uniqueHabits, isLoadingUniqueHabits } = useHabitContext();
 
     const {
-        isDeletingHabit,
         isUpdatingHabit,
-        onDeleteHabit,
+        onDeleteUniqueHabit,
         onUpdateHabit
     } = useHabitContext();
 
@@ -84,9 +77,9 @@ export default function ProfilePage() {
             } catch (error) {
                 console.log('Error downloading image: ', error)
             }
-            
+
             setDownloadingAvatar(false)
-        
+
         }
         if (user) { downloadImage() }
     }, [user])
@@ -161,8 +154,8 @@ export default function ProfilePage() {
                 }
             }
         }
-        catch (error) {    
-            console.log(error)        
+        catch (error) {
+            console.log(error)
             addToast({
                 color: "danger",
                 title: "Error Uploading Avatar",
@@ -208,7 +201,7 @@ export default function ProfilePage() {
                 )
             case "created_at":
                 return (
-                    <p>{new Date(habit.due_date).toLocaleString("en-US", {
+                    <p>{new Date(habit.created_date).toLocaleString("en-US", {
                         month: "short",
                         day: "numeric",
                         hour: "numeric",
@@ -220,29 +213,29 @@ export default function ProfilePage() {
             case "actions":
                 return (
                     <>
-                    <div className="relative flex justify-start items-center gap-2">
-                        <Dropdown className="bg-accent" backdrop="blur" radius="sm">
-                            <DropdownTrigger onClick={() => setSelectedHabit(habit)}>
-                                <Ellipsis className="rounded-sm hover:cursor-pointer" />
-                            </DropdownTrigger>
-                            <DropdownMenu aria-label="Static Actions">
-                                <DropdownItem 
-                                    key="edit" 
-                                    onClick={() =>  {
-                                        setIsEditModalOpen(true)
-                                        setFormData({
-                                            title: habit.title,
-                                            description:  habit.description
-                                        })
-                                    }}>
-                                    Edit habit
-                                </DropdownItem>
-                                <DropdownItem key="delete" className="text-danger" color="danger" onClick={() =>  onDeleteHabit(habit)}>
-                                    Delete habit
-                                </DropdownItem>
-                            </DropdownMenu>
-                        </Dropdown>
-                    </div>
+                        <div className="relative flex justify-start items-center gap-2">
+                            <Dropdown className="bg-accent" backdrop="blur" radius="sm">
+                                <DropdownTrigger onClick={() => setSelectedHabit(habit)}>
+                                    <Ellipsis className="rounded-sm hover:cursor-pointer" />
+                                </DropdownTrigger>
+                                <DropdownMenu aria-label="Static Actions">
+                                    <DropdownItem
+                                        key="edit"
+                                        onClick={() => {
+                                            setIsEditModalOpen(true)
+                                            setFormData({
+                                                title: habit.title,
+                                                description: habit.description
+                                            })
+                                        }}>
+                                        Edit habit
+                                    </DropdownItem>
+                                    <DropdownItem key="delete" className="text-danger" color="danger" onClick={() => onDeleteUniqueHabit(habit)}>
+                                        Delete habit
+                                    </DropdownItem>
+                                </DropdownMenu>
+                            </Dropdown>
+                        </div>
                     </>
                 )
 
@@ -266,22 +259,22 @@ export default function ProfilePage() {
                     <Pen size={12} />
                 </button>
 
-                <Modal 
-                    isOpen={isEditModalOpen} 
+                <Modal
+                    isOpen={isEditModalOpen}
                     onClose={() => {
                         setIsEditModalOpen(false)
                         resetForm()
-                    }} 
+                    }}
                     className="bg-accent" radius="sm" isDismissable={false}>
-                        <ModalContent>
-                            <ModalHeader>Update Habit Details</ModalHeader>
-                            <ModalBody className="flex flex-col gap-8 mt-[-24px]">
-                                <p className="text-muted-foreground text-sm">
-                                    Once your changes are saved, it might take a few minutes to see the changes.
-                                </p>
-                                <Form className="mt-[-12px]">
-                                    <div className="flex flex-col gap-4 w-full">
-                                        <Input
+                    <ModalContent>
+                        <ModalHeader>Update Habit Details</ModalHeader>
+                        <ModalBody className="flex flex-col gap-8 mt-[-24px]">
+                            <p className="text-muted-foreground text-sm">
+                                Once your changes are saved, it might take a few minutes to see the changes.
+                            </p>
+                            <Form className="mt-[-12px]">
+                                <div className="flex flex-col gap-4 w-full">
+                                    <Input
                                         aria-label="title"
                                         id="title"
                                         name="title"
@@ -293,9 +286,9 @@ export default function ProfilePage() {
                                         required
                                         onChange={handleUpdateModalInputChange}
                                         value={formData.title ?? selectedHabit?.title}
-                                        />
-                
-                                        <Textarea
+                                    />
+
+                                    <Textarea
                                         aria-label="description"
                                         id="description"
                                         name="description"
@@ -306,19 +299,19 @@ export default function ProfilePage() {
                                         required
                                         onChange={handleUpdateModalInputChange}
                                         value={formData.description ?? selectedHabit?.description}
-                                        />
-                                    </div>
-                                </Form>
-
-                                <div className="flex justify-end w-full mb-4">
-                                    <Button type="submit" size="sm" className="ml-2" onClick={() => onUpdateHabit(selectedHabit, formData.title, formData.description)}>
-                                        {isUpdatingHabit ? "Updating..." : "Submit"}
-                                    </Button>
+                                    />
                                 </div>
-                                
-                            </ModalBody>
-                        </ModalContent>
-                    </Modal>
+                            </Form>
+
+                            <div className="flex justify-end w-full mb-4">
+                                <Button type="submit" size="sm" className="ml-2" onClick={() => onUpdateHabit(selectedHabit, formData.title, formData.description)}>
+                                    {isUpdatingHabit ? "Updating..." : "Submit"}
+                                </Button>
+                            </div>
+
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
 
                 <Modal isOpen={isAvatarModalOpen} onClose={() => setIsAvatarModalOpen(false)} className="bg-accent" radius="sm" isDismissable={false} >
                     <ModalContent>
@@ -328,7 +321,7 @@ export default function ProfilePage() {
 
                             <label htmlFor="dropzone-file" className="hover:cursor-pointer hover:bg-background/25 flex flex-col gap-2 border-dashed border-2 border-muted-foreground rounded-md w-full p-8 flex justify-center items-center">
                                 <p className="text-muted-foreground text-sm">Click to upload a .jpg image</p>
-                                { uploadingAvatar ?  <CircularProgress /> : <Upload size={24} />}
+                                {uploadingAvatar ? <CircularProgress /> : <Upload size={24} />}
                                 <input accept=".jpg" id="dropzone-file" type="file" className="hidden mx-auto" onChange={uploadAvatar} />
                             </label>
 
@@ -343,7 +336,12 @@ export default function ProfilePage() {
                 </Modal>
             </div>
 
-            {isLoadingUser ?
+            <header>
+                <h1 className="text-4xl font-semibold">{user?.user_metadata.username}</h1>
+                <p className="text-muted-foreground">{user?.email}</p>
+            </header>
+
+            {/* {isLoadingUser ?
                 <Skeleton className="rounded-lg w-24">
                     <div className="h-4" />
                 </Skeleton>
@@ -352,8 +350,8 @@ export default function ProfilePage() {
                     <h1 className="text-4xl font-semibold">{user?.user_metadata.username}</h1>
                     <p className="text-muted-foreground">{user?.email}</p>
                 </header>
-            }
-            
+            } */}
+
 
             <Table
                 fullWidth={true}
@@ -370,16 +368,12 @@ export default function ProfilePage() {
                     isLoading={isLoadingUniqueHabits}
                     loadingContent={<CircularProgress />}
                     items={uniqueHabits}
+                    emptyContent={"No rows to display."}
                 >
                     {(item: Habit) => (
-
-                        
                         <TableRow key={item.key}>
-
-                            {(columnKey) => 
-                                <>
-                                <TableCell>{renderCell(item, columnKey)}</TableCell>                
-                                </>
+                            {(columnKey) =>
+                                <TableCell>{renderCell(item, columnKey)}</TableCell>
                             }
                         </TableRow>
                     )}

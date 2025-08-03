@@ -1,4 +1,4 @@
-import { Habit } from "@/app/dashboard/types";
+import { Habit } from "@/app/types";
 
 export function getStartOfWeek(date: Date) : Date {
 

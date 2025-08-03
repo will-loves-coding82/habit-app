@@ -21,7 +21,7 @@ import { ScrollShadow } from "@heroui/scroll-shadow";
 import { Progress } from "@heroui/progress";
 import { createHabitAction, CreateHabitFormState } from "./actions";
 import { cn } from "@heroui/theme";
-import { ChatMessage, Habit } from "./types";
+import { ChatMessage, CompletionHistory, Habit } from "../types";
 import HabitCard from "@/components/habit-card";
 import { Label } from "@radix-ui/react-label";
 import { BarChart, BotMessageSquare, Flame, X } from "lucide-react";
@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const {
     isAddingHabit,
     isDeletingHabit,
+    isUpdatingHabit,
     totalHabits,
     todayHabits,
     weekHabits,
@@ -58,7 +59,8 @@ export default function DashboardPage() {
     refreshHabits,
     setIsAddingHabit,
     onCompleteHabit,
-    onDeleteHabit
+    onDeleteHabit,
+    onUpdateHabit
   } = useHabitContext();
 
   const {
@@ -67,8 +69,8 @@ export default function DashboardPage() {
     initializeStreak
   } = useStreaks(user);
 
-  const [formState, formAction] = useActionState(createHabitAction, {} as CreateHabitFormState);
-  const [formData, setFormData] = useState<{
+  const [addFormState, addFormAction] = useActionState(createHabitAction, {} as CreateHabitFormState);
+  const [addFormData, setAddFormData] = useState<{
     title: string,
     description: string,
     due_date: DateValue | null,
@@ -80,6 +82,18 @@ export default function DashboardPage() {
     is_weekly: false,
   });
 
+
+  const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState<{
+        title: string | null,
+        description: string | null,
+    }>({
+        title: null,
+        description: null
+    });
+
+
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatId, setChatId] = useState<number | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -88,7 +102,7 @@ export default function DashboardPage() {
 
 
   // TODO: There's an inherent bug where the line chart will redraw even when unrelated parent state variables change
-  const CompletionHistoryChart = memo(function CompletionHistoryChart({completionHistory}: {completionHistory: Habit[]}) {
+  const CompletionHistoryChart = memo(function CompletionHistoryChart({completionHistory}: {completionHistory: CompletionHistory}) {
     return (
       <ResponsiveContainer width="100%" height="60%" className="py-4">
         <LineChart width={300} height={100} data={completionHistory}>
@@ -145,7 +159,6 @@ export default function DashboardPage() {
         setChatMessages(prev => [...prev, aiMessage])
       }
     }
-
   }
 
   const handleChatInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,7 +170,7 @@ export default function DashboardPage() {
     if (value == null) {
       return
     }
-    setFormData((prevData) => ({
+    setAddFormData((prevData) => ({
       ...prevData,
       due_date: value,
     }));
@@ -165,10 +178,18 @@ export default function DashboardPage() {
 
   const handleModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
+    setAddFormData((prevData) => ({
       ...prevData,
       [name]: value,
     }));
+  };
+
+  const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setEditFormData((prevData) => ({
+          ...prevData,
+          [name]: value,
+      }));
   };
 
   const fetchUserData = async () => {
@@ -260,7 +281,6 @@ export default function DashboardPage() {
           }
         });
       }
-
       else {
         console.log("Chat messages: ", data)
         setChatMessages(data)
@@ -275,12 +295,19 @@ export default function DashboardPage() {
   }
 
   const clearForm = () => {
-    setFormData({
+    setAddFormData({
       title: "",
       description: "",
       due_date: null,
       is_weekly: false,
     });
+  }
+
+  const resetEditForm = () => {
+      setEditFormData({
+          title: selectedHabit?.title ?? null,
+          description: selectedHabit?.description ?? null
+      })
   }
 
   const scrollToBottomOfChat = () => {
@@ -290,44 +317,43 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    fetchUserData();
-  }, [])
-
-
-  useEffect(() => {
     if (isChatOpen) {
       scrollToBottomOfChat()
     }
   }, [isChatOpen, chatMessages])
 
-    useEffect(() => {
+  useEffect(() => {
+    fetchUserData();
+  }, [])
+
+  useEffect(() => {
         
-        async function downloadImage() {
-            try {
-                setDownloadingAvatar(true)
+      async function downloadImage() {
+          try {
+              setDownloadingAvatar(true)
 
-                const { data, error } = await supabase.storage
-                    .from('avatars')
-                    .download(`${user?.id}/profile.jpg`)
+              const { data, error } = await supabase.storage
+                  .from('avatars')
+                  .download(`${user?.id}/profile.jpg`)
 
-                if (error) {
-                    throw error
-                }
+              if (error) {
+                  throw error
+              }
 
-                const url = URL.createObjectURL(data)
-                setAvatarURL(url)
+              const url = URL.createObjectURL(data)
+              setAvatarURL(url)
 
-                console.log("avatar url: ", url)
+              console.log("avatar url: ", url)
 
-            } catch (error) {
-                console.log('Error downloading image: ', error)
-            }
-            finally {
-                setDownloadingAvatar(false)
-            }
-        }
+          } catch (error) {
+              console.log('Error downloading image: ', error)
+          }
+          finally {
+              setDownloadingAvatar(false)
+          }
+      }
 
-        if (user) downloadImage()
+      if (user) downloadImage()
 
     }, [user])
 
@@ -335,20 +361,20 @@ export default function DashboardPage() {
   useEffect(() => {
     setIsModalOpen(false);
 
-    if (formState.success) {
+    if (addFormState.success) {
       addToast({
         title: "Habit Created",
-        description: formState.message || "Your habit has been created successfully!",
+        description: addFormState.message || "Your habit has been created successfully!",
         classNames: {
           base: cn(["mb-4 mr-4"])
         }
       });
       refreshData();
     }
-    if (!formState.success && formState.error) {
+    if (!addFormState.success && addFormState.error) {
       addToast({
         title: "Error",
-        description: formState.error || "An error occurred while creating your habit.",
+        description: addFormState.error || "An error occurred while creating your habit.",
         color: "danger",
         classNames: {
           base: cn(["mb-4 mr-4"])
@@ -356,7 +382,7 @@ export default function DashboardPage() {
       });
     }
     setIsAddingHabit(false);
-  }, [formState])
+  }, [addFormState])
 
 
   function calculateProgressForToday(): number {
@@ -375,6 +401,60 @@ export default function DashboardPage() {
 
   return (
     <>
+
+    <Modal 
+      isOpen={isEditModalOpen} 
+      onClose={() => {
+          setIsEditModalOpen(false)
+          resetEditForm()
+      }} 
+      className="bg-accent" radius="sm" isDismissable={false}>
+          <ModalContent>
+              <ModalHeader>Update Habit Details</ModalHeader>
+              <ModalBody className="flex flex-col gap-8 mt-[-24px]">
+                  <p className="text-muted-foreground text-sm">
+                      Once your changes are saved, it might take a few minutes to see the changes.
+                  </p>
+                  <Form className="mt-[-12px]">
+                      <div className="flex flex-col gap-4 w-full">
+                          <Input
+                          aria-label="title"
+                          id="title"
+                          name="title"
+                          type="text"
+                          label="Title"
+                          placeholder="Enter a title"
+                          variant="bordered"
+                          radius="sm"
+                          required
+                          onChange={handleEditModalInputChange}
+                          value={editFormData.title ?? selectedHabit?.title}
+                          />
+  
+                          <Textarea
+                          aria-label="description"
+                          id="description"
+                          name="description"
+                          type="text"
+                          placeholder="Description"
+                          variant="bordered"
+                          radius="sm"
+                          required
+                          onChange={handleEditModalInputChange}
+                          value={editFormData.description ?? selectedHabit?.description}
+                          />
+                      </div>
+                  </Form>
+
+                  <div className="flex justify-end w-full mb-4">
+                      <Button type="submit" size="sm" className="ml-2" onClick={() => onUpdateHabit(selectedHabit, editFormData.title, editFormData.description)}>
+                          {isUpdatingHabit ? "Updating..." : "Submit"}
+                      </Button>
+                  </div>
+                  
+              </ModalBody>
+          </ModalContent>
+      </Modal>
 
       {
         isStatsOpen &&
@@ -640,7 +720,7 @@ export default function DashboardPage() {
                 <ModalBody className="flex flex-col gap-8 mt-[-24px]">
                   <p className="text-muted-foreground text-sm">Habits repeat daily by default. Change this setting to weekly down below.</p>
 
-                  <Form action={formAction} onSubmit={() => { setIsAddingHabit(true) }} className="mt-[-12px]">
+                  <Form action={addFormAction} onSubmit={() => { setIsAddingHabit(true) }} className="mt-[-12px]">
                     <div className="flex flex-col gap-4 w-full">
                       <Input
                         aria-label="title"
@@ -653,7 +733,7 @@ export default function DashboardPage() {
                         radius="sm"
                         required
                         onChange={handleModalInputChange}
-                        value={formData.title}
+                        value={addFormData.title}
                       />
 
                       <Textarea
@@ -666,7 +746,7 @@ export default function DashboardPage() {
                         radius="sm"
                         required
                         onChange={handleModalInputChange}
-                        value={formData.description}
+                        value={addFormData.description}
                       />
 
                       <DatePicker
@@ -681,12 +761,12 @@ export default function DashboardPage() {
                         radius="sm"
                         granularity="minute"
                         onChange={handleDueDateChange}
-                        value={formData.due_date}
+                        value={addFormData.due_date}
                       />
 
                       <div className="flex gap-3 ml-[2px]">
-                        <Checkbox id="weekly" className="border-muted-foreground" checked={formData.is_weekly} onCheckedChange={(checked) => {
-                          setFormData((prevData) => ({
+                        <Checkbox id="weekly" className="border-muted-foreground" checked={addFormData.is_weekly} onCheckedChange={(checked) => {
+                          setAddFormData((prevData) => ({
                             ...prevData,
                             is_weekly: Boolean(checked.valueOf),
                           }));

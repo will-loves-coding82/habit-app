@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react"
-import { Habit } from "@/app/dashboard/types";
+import { Habit } from "@/app/types";
 import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
 import { Alert } from "@heroui/alert";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownSection, DropdownItem } from "@heroui/dropdown";
