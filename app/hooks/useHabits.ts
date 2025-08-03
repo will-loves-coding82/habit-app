@@ -14,27 +14,25 @@ export function useHabits(user: User | null) {
     const supabase = createClient();
     const [isAddingHabit, setIsAddingHabit] = useState(false);
     const [isDeletingHabit, setIsDeletingHabit] = useState(false);
+    const [isLoadingUniqueHabits, setIsLoadingUniqueHabits] = useState(false);
+    const [isUpdatingHabit, setIsUpdatingHabit] = useState(false);
 
     const [totalHabits, setTotalHabits] = useState(0);
     const [todayHabits, setTodayHabits] = useState<Habit[]>([]);
     const [weekHabits, setWeekHabits] = useState<Map<string, Habit[]>>(new Map());
     const [uniqueHabits, setUniqueHabits] = useState<Habit[]>([]);
-    const [isLoadingUniqueHabits, setIsLoadingUniqueHabits] = useState(false);
-
     const [completionHistory, setCompletionHistory] = useState<any[]>([]);
 
     
     useEffect(() => {
         const fetchData = () => {
-            if (user !== null) {
-                fetchTotalHabits();
-                fetchTodayHabits();
-                fetchHabitsThisWeek();
-                fetchCompletionHistory();
-                fetchUniqueHabits();
-            }
+            fetchTotalHabits();
+            fetchTodayHabits();
+            fetchHabitsThisWeek();
+            fetchCompletionHistory();
+            fetchUniqueHabits();
         }
-        fetchData();
+        if (user) {fetchData()}
     }, [user]);
 
 
@@ -69,7 +67,7 @@ export function useHabits(user: User | null) {
 
         return list
     }
-    
+
 
     // Rolling window of habits from past 7 days
     const fetchCompletionHistory= async() => {
@@ -248,6 +246,46 @@ export function useHabits(user: User | null) {
     }, [user])
 
 
+    const onUpdateHabit = useCallback(async(habit: Habit, new_title: string, new_description: string) => {
+        setIsUpdatingHabit(true)
+        
+        
+        const parentId = (habit.parent_id == null) ? habit.id : habit.parent_id;
+        console.log(`Updating habit with title ${new_title} and description ${new_description}`)
+
+        const { data, error } = await supabase
+            .from("habits")
+            .update({title: new_title, description: new_description})
+            .eq("id", parentId)
+            .eq("is_parent", true)
+            .eq("user_uid", user?.id)
+            .select()
+
+        if (error) {
+            console.log("Error updating habit")
+            addToast({
+                title: "Error",
+                description: "An error occurred while updating your habit.",
+                color: "danger",
+                classNames: {
+                    base: cn(["mb-4 mr-4"])
+                }
+            });
+        }
+        else {
+            console.log("Updated row: ", data)
+            addToast({
+                title: "Habit Updated",
+                description: "It might take a moment to see the changes reflected.",
+                classNames: {
+                    base: cn(["mb-4 mr-4"])
+                }
+            });
+        }
+        setIsUpdatingHabit(false)
+
+    }, [user])
+
     const onCompleteHabit = useCallback(async (habit: Habit, is_complete: boolean) => {
 
         const completed_date = is_complete ? new Date().toISOString() : null;
@@ -371,6 +409,7 @@ export function useHabits(user: User | null) {
     return {
         isAddingHabit,
         isDeletingHabit,
+        isUpdatingHabit,
         isLoadingUniqueHabits,
         totalHabits,
         todayHabits,
@@ -387,7 +426,8 @@ export function useHabits(user: User | null) {
         fetchHabitsThisWeek,
         fetchTodayHabits,
         onCompleteHabit,
-        onDeleteHabit
+        onDeleteHabit,
+        onUpdateHabit
     };
 
 

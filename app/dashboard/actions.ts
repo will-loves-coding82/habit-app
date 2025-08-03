@@ -12,7 +12,6 @@ export async function createHabitAction(previousState: CreateHabitFormState, for
     const supabase = await createClient();
     const user = await supabase.auth.getUser();
 
-
     const dueDate = Date.parse(formData.get("due_date") as string);
     const {error} = await supabase.from("habits").insert({
         title: formData.get("title") as string,
@@ -37,3 +36,4 @@ export async function createHabitAction(previousState: CreateHabitFormState, for
     });
 
 }
+

@@ -26,10 +26,10 @@ import HabitCard from "@/components/habit-card";
 import { Label } from "@radix-ui/react-label";
 import { BarChart, BotMessageSquare, Flame, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
-import { useHabits } from "../hooks/useHabits";
 import { useStreaks } from "../hooks/useStreaks";
 import { CustomTooltip } from '@/components/ui/chart-tooltip';
 import { useHabitContext } from '../context/context';
+import Link from 'next/link';
 
 
 export default function DashboardPage() {
@@ -38,6 +38,10 @@ export default function DashboardPage() {
 
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setisLoadingUser] = useState(true);
+  
+  const [avatarURL, setAvatarURL] = useState<string | null>(null);
+  const [downloadingAvatar, setDownloadingAvatar] = useState(false);
+
   const [selected, setSelected] = useState("Today");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,6 +87,7 @@ export default function DashboardPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
 
+  // TODO: There's an inherent bug where the line chart will redraw even when unrelated parent state variables change
   const CompletionHistoryChart = memo(function CompletionHistoryChart({completionHistory}: {completionHistory: Habit[]}) {
     return (
       <ResponsiveContainer width="100%" height="60%" className="py-4">
@@ -295,6 +300,36 @@ export default function DashboardPage() {
     }
   }, [isChatOpen, chatMessages])
 
+    useEffect(() => {
+        
+        async function downloadImage() {
+            try {
+                setDownloadingAvatar(true)
+
+                const { data, error } = await supabase.storage
+                    .from('avatars')
+                    .download(`${user?.id}/profile.jpg`)
+
+                if (error) {
+                    throw error
+                }
+
+                const url = URL.createObjectURL(data)
+                setAvatarURL(url)
+
+                console.log("avatar url: ", url)
+
+            } catch (error) {
+                console.log('Error downloading image: ', error)
+            }
+            finally {
+                setDownloadingAvatar(false)
+            }
+        }
+
+        if (user) downloadImage()
+
+    }, [user])
 
   // Handle form submission results
   useEffect(() => {
@@ -398,7 +433,9 @@ export default function DashboardPage() {
                   <span className="flex justify-between items-center">
                     <h3 className="text-lg font-medium">Total Habits</h3>
 
-                    <p className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">manage</p>
+                    <Link href={"/dashboard/profile"} className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">
+                      manage
+                    </Link>
                   </span>
                   <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
                 </div>
@@ -481,7 +518,8 @@ export default function DashboardPage() {
 
         <div className="w-full max-w-7xl flex justify-between bg-background items-center p-2 px-5 text-sm">
           <span className="flex gap-2 items-center">
-            <Avatar src="https://i.pravatar.cc/150?u=a042581f4e29026024d" className="w-6 h-6" />
+            { avatarURL && <Avatar src={avatarURL} size="lg" className="w-6 h-6" classNames={{ icon: "text-primary w-16 h-16", base: "bg-accent mx-auto" }} /> }
+
             {isLoadingUser ?
               <Skeleton className="rounded-lg w-24">
                 <div className="h-4 bg-accent" />
