@@ -110,7 +110,8 @@ export default function DashboardPage() {
         created_at: new Date().toLocaleString(),
         role: "user",
         content: trimmedInput,
-        chat_id: chatId!!
+        chat_id: chatId!!,
+        user_uid: user.id
       }
 
 
@@ -136,7 +137,8 @@ export default function DashboardPage() {
           created_at: new Date().toLocaleString(),
           role: "assistant",
           content: data.body.finalResponse,
-          chat_id: chatId!!
+          chat_id: chatId!!,
+          user_uid: user.id
         };
 
         console.log(data.body.finalResponse)
@@ -242,6 +244,7 @@ export default function DashboardPage() {
         .from("messages")
         .select("*")
         .eq("chat_id", chat)
+        .eq("user_uid", user.id)
 
       if (error) {
         addToast({

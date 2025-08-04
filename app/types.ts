@@ -40,7 +40,8 @@ export type ChatMessage = {
     created_at: string,
     role: string,
     content: string,
-    chat_id: number
+    chat_id: number,
+    user_uid: string
 }
 
 
