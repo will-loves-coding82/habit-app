@@ -8,7 +8,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form } from "@heroui/form";
 import React, { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { DateValue, getLocalTimeZone, now } from "@internationalized/date";
+import { DateValue, getLocalTimeZone, now, today } from "@internationalized/date";
 import { Avatar } from "@heroui/avatar";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
@@ -54,6 +54,7 @@ export default function DashboardPage() {
     totalHabits,
     todayHabits,
     weekHabits,
+    uniqueHabits,
     completionHistory,
     refreshHabits,
     setIsAddingHabit,
@@ -390,10 +391,10 @@ export default function DashboardPage() {
                       <div className="flex flex-col gap-4 w-full">
                           <Input
                           aria-label="title"
+                          label="Title"
                           id="title"
                           name="title"
                           type="text"
-                          label="Title"
                           placeholder="Enter a title"
                           variant="bordered"
                           radius="sm"
@@ -404,6 +405,7 @@ export default function DashboardPage() {
   
                           <Textarea
                           aria-label="description"
+                          label="Description"
                           id="description"
                           name="description"
                           type="text"
@@ -471,14 +473,7 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground text-sm">Past 7 days</p>
                   </article>
 
-                  <ResponsiveContainer width="100%" height="60%" className="py-4">
-                    <LineChart width={300} height={100} data={completionHistory}>
-                      <XAxis dataKey="day" hide />
-                      <Tooltip cursor={false} content={<CustomTooltip active={false} payload={[]} label={""} />} />
-                      <Line type="monotone" dataKey="count" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits}/>                </div>
 
                 <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
                   <span className="flex justify-between items-center">
@@ -488,7 +483,7 @@ export default function DashboardPage() {
                       manage
                     </Link>
                   </span>
-                  <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
+                  <p className="font-semibold text-6xl mt-4">{uniqueHabits.length}</p>
                 </div>
 
                 <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
@@ -611,6 +606,7 @@ export default function DashboardPage() {
                 <h3 className="text-lg font-medium">Today's Progress</h3>
                 <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
                 <Progress
+                  aria-label="progress"
                   size="lg"
                   radius="none"
                   color="success"
@@ -641,7 +637,7 @@ export default function DashboardPage() {
                     manage
                   </Link>                
                 </span>
-                <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
+                <p className="font-semibold text-6xl mt-4">{uniqueHabits.length}</p>
               </div>
 
               <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
@@ -702,6 +698,7 @@ export default function DashboardPage() {
 
                       <Textarea
                         aria-label="description"
+                        label="description"
                         id="description"
                         name="description"
                         type="text"
@@ -714,11 +711,11 @@ export default function DashboardPage() {
                       />
 
                       <DatePicker
-                        aria-label="due date"
+                        aria-label="due_date"
                         disableAnimation
                         isRequired
                         showMonthAndYearPickers
-                        // minValue={today(getLocalTimeZone())}
+                        minValue={today(getLocalTimeZone())}
                         label="due date"
                         name="due_date"
                         variant="bordered"
@@ -735,7 +732,7 @@ export default function DashboardPage() {
                             is_weekly: Boolean(checked.valueOf),
                           }));
                         }} />
-                        <Label htmlFor="weekly" className="text-muted-foreground text-sm">Repeats Weekly</Label>
+                        <Label aria-label="weekly" htmlFor="weekly" className="text-muted-foreground text-sm">Repeats Weekly</Label>
                       </div>
                     </div>
 

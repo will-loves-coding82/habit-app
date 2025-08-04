@@ -113,10 +113,10 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
                                 <div className="flex flex-col gap-4 w-full">
                                     <Input
                                         aria-label="title"
+                                        label="Title"
                                         id="title"
                                         name="title"
                                         type="text"
-                                        label="Title"
                                         placeholder="Enter a title"
                                         variant="bordered"
                                         radius="sm"

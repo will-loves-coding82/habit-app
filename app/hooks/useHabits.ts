@@ -19,7 +19,6 @@ export function useHabits(user: User) {
     const [isLoadingUniqueHabits, setIsLoadingUniqueHabits] = useState(false);
     const [isUpdatingHabit, setIsUpdatingHabit] = useState(false);
 
-    const [totalHabits, setTotalHabits] = useState(0);
     const [todayHabits, setTodayHabits] = useState<Habit[]>([]);
     const [weekHabits, setWeekHabits] = useState<Map<string, Habit[]>>(new Map());
     const [uniqueHabits, setUniqueHabits] = useState<Habit[]>([]);
@@ -30,7 +29,6 @@ export function useHabits(user: User) {
 
     useEffect(() => {
         const fetchHabitData = () => {
-            fetchTotalHabits();
             fetchTodayHabits();
             fetchHabitsThisWeek();
             fetchCompletionHistory();
@@ -41,14 +39,11 @@ export function useHabits(user: User) {
 
 
     const refreshHabits =  async() => {
-            console.log("refreshing habit data. User is: ", user)
-            fetchCompletionHistory();
-            fetchTodayHabits();
-            fetchHabitsThisWeek();
-            fetchTotalHabits();
-            fetchUniqueHabits();
-        
-       
+        console.log("refreshing habit data. User is: ", user)
+        fetchCompletionHistory();
+        fetchTodayHabits();
+        fetchHabitsThisWeek();
+        fetchUniqueHabits();
     }
     
 
@@ -149,6 +144,7 @@ export function useHabits(user: User) {
             .select("*")
             .eq("user_uid", user?.id)
             .eq("is_parent", true)
+            .order("created_at", {ascending: false})
 
         if (error) {
             console.log("Error fetching all unique habits: ", error)
@@ -161,18 +157,6 @@ export function useHabits(user: User) {
         setIsLoadingUniqueHabits(false)
         
     }, [user])
-
-
-    const fetchTotalHabits = useCallback(async () => {
-        const { data, error } = await supabase.rpc("count_distinct_habits")
-        if (error) {
-            console.log('Error getting total count of habits: ', error)
-        }
-        else {
-            setTotalHabits(data)
-        }
-    }, [user])
-
 
     const fetchTodayHabits = useCallback(async () => {
         const today = new Date();
@@ -209,8 +193,8 @@ export function useHabits(user: User) {
 
     const fetchHabitsThisWeek = useCallback(async () => {
         const date = new Date();
-        const weekStart = getStartOfWeek(date).toISOString();
-        const weekEnd = getEndOfWeek(date).toISOString();
+        const weekStart = getStartOfWeek().toISOString();
+        const weekEnd = getEndOfWeek().toISOString();
 
         const { data, error } = await supabase
             .from("habits")
@@ -446,7 +430,6 @@ export function useHabits(user: User) {
         isDeletingHabit,
         isUpdatingHabit,
         isLoadingUniqueHabits,
-        totalHabits,
         todayHabits,
         weekHabits,
         uniqueHabits,
@@ -457,7 +440,6 @@ export function useHabits(user: User) {
         setIsAddingHabit,
         setIsDeletingHabit,
         fetchUniqueHabits,
-        fetchTotalHabits,
         fetchHabitsThisWeek,
         fetchTodayHabits,
         onCompleteHabit,
