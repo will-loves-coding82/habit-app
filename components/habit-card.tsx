@@ -95,8 +95,12 @@ export default function HabitCard(
                             {habit.is_complete && isCompletedOnTime && !isLate &&
                                 <motion.p key="complete" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0, opacity: 0 }} layout className="text-success px-2 py-[2px] bg-success/20 rounded-md">complete</motion.p>
                             }
-                            {habit.is_complete && !isCompletedOnTime && (<p className="text-warning px-2 py-[2px] bg-warning/25 text-warning rounded-md">completed late</p>)}
-                            {isLate && <p className="text-danger px-2 py-[2px] bg-danger/25 rounded-md">late</p>}
+                            {habit.is_complete && !isCompletedOnTime && 
+                                <motion.p key="completed_late" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0, opacity: 0 }}  className="text-warning px-2 py-[2px] bg-warning/25 text-warning rounded-md">completed late</motion.p>
+                            }
+                            {isLate && 
+                                <motion.p key="late" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0, opacity: 0 }}  className="text-danger px-2 py-[2px] bg-danger/25 rounded-md">late</motion.p>
+                            }
                         </div>
 
                         <Dropdown className="bg-accent" backdrop="blur" radius="sm">
