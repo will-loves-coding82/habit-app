@@ -1,6 +1,5 @@
 "use client";
 
-import { LineChart, XAxis, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { Tab, Tabs } from "@heroui/tabs";
 import { Skeleton } from "@heroui/skeleton";
 import { DatePicker } from "@heroui/date-picker";
@@ -23,7 +22,6 @@ import { Label } from "@radix-ui/react-label";
 import { BarChart, BotMessageSquare, Flame, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useStreaks } from "../hooks/useStreaks";
-import { CustomTooltip } from '@/components/ui/chart-tooltip';
 import { useHabitContext } from '../context/habit-context';
 import Link from 'next/link';
 import { CompletionHistoryLineChart } from '@/components/completion-history';
@@ -448,7 +446,7 @@ export default function DashboardPage() {
             </DrawerHeader>
 
             <DrawerBody>
-              <section className="flex flex-col sm:grid sm:grid-flow-cols sm:grid-cols-3 sm:grid-rows-2 gap-4 sm:max-h-[320px]">
+              <section className="flex flex-col sm:grid sm:grid-flow-cols sm:grid-cols-3 sm:grid-rows-2 gap-4 sm:max-h-[320px] pb-16">
 
                 <div className="flex flex-col col-span-2 bg-card rounded-md p-4">
                   <h3 className="text-lg font-medium">Today's Progress</h3>
@@ -467,7 +465,7 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                <div className="h-32 sm:flex sm:flex-col justify-between sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-3 col-start-3">
+                <div className="h-48 sm:flex sm:flex-col justify-between sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-3 col-start-3">
                   <article>
                     <h3 className="text-lg font-medium">Completion History</h3>
                     <p className="text-muted-foreground text-sm">Past 7 days</p>

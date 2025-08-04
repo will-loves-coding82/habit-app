@@ -27,6 +27,31 @@ export function getEndOfWeek() : Date {
 }
 
 
+export function calculateBaseWeekDays() : string[] {
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const lastWeek = new Date(today);
+        lastWeek.setDate(today.getDate() - 6);
+
+        let list = []
+
+        for (let i = 0; i < 7; i++) {
+            let lastWeekName = lastWeek.toLocaleString("en-US", {
+                weekday: "short"
+            })
+
+            console.log("setting base week day: ", lastWeekName)
+            list.push(lastWeekName)
+            lastWeek.setDate(lastWeek.getDate() + 1)
+        }
+
+        return list
+    }
+
+
+
 export function isHabitCompletedOnTime(habit: Habit) : boolean {
     const dueDate = new Date(habit.due_date);
     const completedDate = habit.completed_date ? new Date(habit.completed_date) : null;

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { addToast } from "@heroui/toast";
 import { cn } from "@heroui/theme";
-import { getEndOfWeek, getStartOfWeek } from "@/lib/functions";
+import { calculateBaseWeekDays, getEndOfWeek, getStartOfWeek } from "@/lib/functions";
 import { redirect } from "next/navigation";
 
 
@@ -44,30 +44,6 @@ export function useHabits(user: User) {
         fetchTodayHabits();
         fetchHabitsThisWeek();
         fetchUniqueHabits();
-    }
-    
-
-    function calculateBaseWeekDays() : string[] {
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const lastWeek = new Date(today);
-        lastWeek.setDate(today.getDate() - 6);
-
-        let list = []
-
-        for (let i = 0; i < 7; i++) {
-            let lastWeekName = lastWeek.toLocaleString("en-US", {
-                weekday: "short"
-            })
-
-            console.log("setting base week day: ", lastWeekName)
-            list.push(lastWeekName)
-            lastWeek.setDate(lastWeek.getDate() + 1)
-        }
-
-        return list
     }
 
 
