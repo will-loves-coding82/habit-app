@@ -49,7 +49,6 @@ export default function DashboardPage() {
     isAddingHabit,
     isDeletingHabit,
     isUpdatingHabit,
-    totalHabits,
     todayHabits,
     weekHabits,
     uniqueHabits,
