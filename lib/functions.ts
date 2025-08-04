@@ -1,17 +1,27 @@
 import { Habit } from "@/app/types";
 
-export function getStartOfWeek(date: Date) : Date {
-    date.setHours(0,0,0,0)
-    date.setDate(date.getDate() - 7);
+export function getStartOfWeek() : Date {
+    const date = new Date()
+    const day = date.getDay()
+
+    if ( day !== 0) {
+        date.setHours(0,0,0,0)
+        date.setDate(date.getDate() - day);
+    }
+
     console.log("Start of week: ", date)
     return date
 }
 
 
-export function getEndOfWeek(date: Date) : Date {
+export function getEndOfWeek() : Date {
+    const date = new Date()
     const day = date.getDay()
-    date.setHours(23,59,0,0)
-    date.setDate(date.getDate() +  (7 - day));
+    console.log("today's day number: ", day)
+    if ( day < 7) {
+        date.setHours(23,59,0,0)
+        date.setDate(date.getDate() + (7-day));
+    }
     console.log("End of week: ", date)
     return date
 }
