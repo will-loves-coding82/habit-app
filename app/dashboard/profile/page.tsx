@@ -185,7 +185,7 @@ export default function ProfilePage() {
                 )
             case "created_at":
                 return (
-                    <p>{new Date(habit.created_date).toLocaleString("en-US", {
+                    <p>{new Date(habit.created_at).toLocaleString("en-US", {
                         month: "short",
                         day: "numeric",
                         hour: "numeric",

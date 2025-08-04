@@ -3,7 +3,7 @@ import { Dispatch, SetStateAction } from "react";
 
 export type Habit = {
     [x: string]: any;
-    created_date: string;
+    created_at: string;
     id: number;
     parent_id: number | null;
     title: string;
