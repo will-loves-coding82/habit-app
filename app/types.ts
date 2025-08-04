@@ -85,6 +85,8 @@ export type HabitCardProps = {
     habit: Habit, 
     type: string, 
     isDeleting: boolean, 
-    onCompleteHabit: (habit: Habit, completed: boolean) => void, 
-    onDeleteHabit: (habit: Habit) => void
+    isUpdating: boolean,
+    onComplete: (habit: Habit, completed: boolean) => void, 
+    onDelete: (habit: Habit) => void,
+    onUpdate: (habit: Habit | null, new_title: string | null, new_description: string | null) => Promise<void>
 }

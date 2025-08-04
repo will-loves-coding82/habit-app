@@ -639,7 +639,9 @@ export default function DashboardPage() {
                 <span className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">Total Habits</h3>
 
-                  <p className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">manage</p>
+                  <Link href={"/dashboard/profile"} className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">
+                    manage
+                  </Link>                
                 </span>
                 <p className="font-semibold text-6xl mt-4">{totalHabits}</p>
               </div>
@@ -757,7 +759,15 @@ export default function DashboardPage() {
             {selected === "Today" ?
               <ul className="flex flex-col gap-4 mt-8">
                 {todayHabits?.map((habit: Habit) =>
-                  <HabitCard key={habit.id} habit={habit} type="today" isDeleting={isDeletingHabit} onCompleteHabit={onCompleteHabit} onDeleteHabit={onDeleteHabit} />
+                  <HabitCard 
+                    key={habit.id} 
+                    habit={habit} 
+                    type="today" 
+                    isDeleting={isDeletingHabit} 
+                    isUpdating={isUpdatingHabit} 
+                    onUpdate={onUpdateHabit}  
+                    onComplete={onCompleteHabit} 
+                    onDelete={onDeleteHabit} />
                 )}
               </ul>
 
@@ -776,7 +786,15 @@ export default function DashboardPage() {
                     </span>
                     <section className="flex flex-col gap-4 mt-4">
                       {habits?.map((habit: Habit) => (
-                        <HabitCard key={habit.id} habit={habit} isDeleting={isDeletingHabit} type="this_week" onCompleteHabit={onCompleteHabit} onDeleteHabit={onDeleteHabit} />
+                        <HabitCard 
+                          key={habit.id} 
+                          habit={habit}  
+                          type="this_week" 
+                          isDeleting={isDeletingHabit} 
+                          isUpdating={isUpdatingHabit} 
+                          onUpdate={onUpdateHabit} 
+                          onComplete={onCompleteHabit} 
+                          onDelete={onDeleteHabit} />
                       ))}
                     </section>
                   </div>

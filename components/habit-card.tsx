@@ -10,17 +10,42 @@ import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { useTheme } from "next-themes";
 import { isHabitCompletedOnTime, isHabitLate } from "@/lib/functions";
+import { Form } from "@heroui/form";
+import { Input, Textarea } from "@heroui/input";
 
 
 
-export default function HabitCard({ habit, type, isDeleting, onCompleteHabit, onDeleteHabit } : HabitCardProps) {
+export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdate, onComplete, onDelete} : HabitCardProps) {
 
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const { resolvedTheme } = useTheme();
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [formData, setFormData] = useState<{
+        title: string,
+        description: string,
+    }>({
+        title: habit.title,
+        description: habit.description
+    });
 
     const isCompletedOnTime = isHabitCompletedOnTime(habit);
     const isLate = isHabitLate(habit);
 
+
+    const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
+    };
+
+    const resetForm = () => {
+        setFormData({
+            title: habit.title,
+            description: habit.description
+        })
+    }
 
     // Refresh the UI component every minute
     const [, setNow] = useState(Date.now());
@@ -53,10 +78,10 @@ export default function HabitCard({ habit, type, isDeleting, onCompleteHabit, on
                             />
                         </div>
 
-                        <div>
+                        <header>
                             <h2 className="text-lg font-medium">{habit.title}</h2>
                             <p className="text-muted-foreground text-sm">{habit.description}</p>
-                        </div>
+                        </header>
 
                     </ModalBody>
 
@@ -64,14 +89,67 @@ export default function HabitCard({ habit, type, isDeleting, onCompleteHabit, on
                         <Button variant="outline" type="reset" onClick={() => setIsDeleteModalOpen(false)} className="bg-accent">
                             Cancel
                         </Button>
-                        <Button className="ml-2 bg-danger hover:bg-danger text-white" onClick={() => onDeleteHabit(habit)}>
+                        <Button className="ml-2 bg-danger hover:bg-danger text-white" onClick={() => onDelete(habit)}>
                             {isDeleting ? "Deleting..." : "Delete"}
                         </Button>
                     </ModalFooter>
                 </ModalContent>
-
-
             </Modal>
+
+            <Modal
+                    isOpen={isEditModalOpen}
+                    onClose={() => {
+                        setIsEditModalOpen(false)
+                        resetForm()
+                    }}
+                    className="bg-accent" radius="sm" isDismissable={false}>
+                    <ModalContent>
+                        <ModalHeader>Update Habit Details</ModalHeader>
+                        <ModalBody className="flex flex-col gap-8 mt-[-24px]">
+                            <p className="text-muted-foreground text-sm">
+                                Once your changes are saved, it might take a few minutes to see the changes.
+                            </p>
+                            <Form className="mt-[-12px]">
+                                <div className="flex flex-col gap-4 w-full">
+                                    <Input
+                                        aria-label="title"
+                                        id="title"
+                                        name="title"
+                                        type="text"
+                                        label="Title"
+                                        placeholder="Enter a title"
+                                        variant="bordered"
+                                        radius="sm"
+                                        required
+                                        onChange={handleEditModalInputChange}
+                                        value={formData.title ?? habit.title}
+                                    />
+
+                                    <Textarea
+                                        aria-label="description"
+                                        id="description"
+                                        name="description"
+                                        type="text"
+                                        placeholder="Description"
+                                        variant="bordered"
+                                        radius="sm"
+                                        required
+                                        onChange={handleEditModalInputChange}
+                                        value={formData.description ?? habit.description}
+                                    />
+                                </div>
+                            </Form>
+
+                            <div className="flex justify-end w-full mb-4">
+                                <Button type="submit" size="sm" className="ml-2" onClick={() => onUpdate(habit, formData.title, formData.description)}>
+                                    {isUpdating ? "Updating..." : "Submit"}
+                                </Button>
+                            </div>
+
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
+
 
             <Card className="w-full rounded-md bg-card px-3 z-0" shadow="none">
                 <CardHeader>
@@ -105,8 +183,8 @@ export default function HabitCard({ habit, type, isDeleting, onCompleteHabit, on
                             <DropdownTrigger>
                                 <Ellipsis className="rounded-sm hover:cursor-pointer" />
                             </DropdownTrigger>
-                            <DropdownMenu aria-label="Static Actions" variant="faded">
-                                <DropdownItem key="edit">Edit habit</DropdownItem>
+                            <DropdownMenu aria-label="Static Actions" variant="faded" >
+                                <DropdownItem key="edit" onClick = {() => setIsEditModalOpen(true)} >Edit habit</DropdownItem>
                                 <DropdownItem key="delete" className="text-danger" color="danger" onClick={() => setIsDeleteModalOpen(true)}>
                                     Delete habit
                                 </DropdownItem>
@@ -121,7 +199,7 @@ export default function HabitCard({ habit, type, isDeleting, onCompleteHabit, on
                         disabled={type == "this_week"}
                         checked={habit.is_complete}
                         onCheckedChange={(checked) =>
-                            onCompleteHabit(habit, Boolean(checked))
+                            onComplete(habit, Boolean(checked))
                         }
                         className="mt-1 mr-2"
                     />

@@ -2,12 +2,10 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@heroui/avatar";
-import { Key, useActionState, useCallback, useEffect, useState } from "react";
-import { User } from "@supabase/supabase-js";
+import { Key, useCallback, useEffect, useState } from "react";
 import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from "@heroui/table";
 import { useHabitContext } from "@/app/context/habit-context";
 import { Habit } from "../../types";
-import { Skeleton } from "@heroui/skeleton";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 import { Ellipsis, Pen, Upload } from "lucide-react";
 import { CircularProgress } from "@heroui/progress";
@@ -17,21 +15,18 @@ import { addToast } from "@heroui/toast";
 import { cn } from "@heroui/theme";
 import { Input, Textarea } from "@heroui/input";
 import { Form } from "@heroui/form";
-import { describe } from "node:test";
-import { title } from "process";
 import { useUserContext } from "@/app/context/user-context";
 
 export default function ProfilePage() {
 
     const supabase = createClient();
+    const { ...userProps } = useUserContext();
+    const user = userProps.user
+    
     const [avatarURL, setAvatarURL] = useState<string | null>(null);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [downloadingAvatar, setDownloadingAvatar] = useState(false);
-    const { ...userProps } = useUserContext();
 
-    const user = userProps.user
-    const isLoadingUser = userProps.isLoadingUser
-    
     const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
     const [formData, setFormData] = useState<{
         title: string | null,
@@ -43,7 +38,6 @@ export default function ProfilePage() {
 
     const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const { uniqueHabits, isLoadingUniqueHabits } = useHabitContext();
 
     const {
@@ -75,7 +69,7 @@ export default function ProfilePage() {
     }, [user])
 
 
-    const handleUpdateModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData((prevData) => ({
             ...prevData,
@@ -274,7 +268,7 @@ export default function ProfilePage() {
                                         variant="bordered"
                                         radius="sm"
                                         required
-                                        onChange={handleUpdateModalInputChange}
+                                        onChange={handleEditModalInputChange}
                                         value={formData.title ?? selectedHabit?.title}
                                     />
 
@@ -287,7 +281,7 @@ export default function ProfilePage() {
                                         variant="bordered"
                                         radius="sm"
                                         required
-                                        onChange={handleUpdateModalInputChange}
+                                        onChange={handleEditModalInputChange}
                                         value={formData.description ?? selectedHabit?.description}
                                     />
                                 </div>
