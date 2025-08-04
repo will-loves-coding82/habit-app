@@ -644,9 +644,9 @@ export default function DashboardPage() {
               <div className="hidden h-32 sm:flex sm:flex-col justify-between sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-3 col-start-3">
                 <article>
                   <h3 className="text-lg font-medium">Completion History</h3>
-                  <p className="text-muted-foreground text-sm">Past 7 days</p>
+                  <p className="text-muted-foreground text-sm">7 days</p>
                 </article>
-
+                
                 <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits}/>
               </div>
 
