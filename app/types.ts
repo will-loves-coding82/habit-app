@@ -41,7 +41,6 @@ export type ChatMessage = {
     role: string,
     content: string,
     chat_id: number,
-    user_uid: string
 }
 
 

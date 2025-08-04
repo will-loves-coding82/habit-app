@@ -111,7 +111,6 @@ export default function DashboardPage() {
         role: "user",
         content: trimmedInput,
         chat_id: chatId!!,
-        user_uid: user.id
       }
 
 
@@ -122,7 +121,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           userPrompt: chatInput,
           chatId: chatId,
-          userId: user!!.id,
+          userId: user.id,
           timezone: getLocalTimeZone()
         }),
         method: 'POST'
@@ -138,7 +137,6 @@ export default function DashboardPage() {
           role: "assistant",
           content: data.body.finalResponse,
           chat_id: chatId!!,
-          user_uid: user.id
         };
 
         console.log(data.body.finalResponse)
