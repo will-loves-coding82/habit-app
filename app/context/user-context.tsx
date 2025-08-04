@@ -1,10 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { useHabits } from "../hooks/useHabits";
 import { createClient } from "@/lib/supabase/client";
 import { redirect } from "next/navigation";
-import { HabitContextProps, UserContextProps } from "../types";
+import { UserContextProps } from "../types";
 import { User } from "@supabase/supabase-js";
 
 

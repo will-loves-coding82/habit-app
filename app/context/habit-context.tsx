@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 import { useHabits } from "../hooks/useHabits";
 import { HabitContextProps } from "../types";
 import { useUserContext } from "./user-context";

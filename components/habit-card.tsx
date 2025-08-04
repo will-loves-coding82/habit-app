@@ -1,6 +1,6 @@
 import { motion } from "motion/react"
 import { HabitCardProps } from "@/app/types";
-import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
+import { Card, CardHeader, CardBody } from "@heroui/card";
 import { Alert } from "@heroui/alert";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 import { Checkbox } from "@/components/ui/checkbox"

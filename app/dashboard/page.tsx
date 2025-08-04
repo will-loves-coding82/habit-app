@@ -1,17 +1,13 @@
 "use client";
 
 import { LineChart, XAxis, Line, ResponsiveContainer, Tooltip } from 'recharts';
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Tab, Tabs } from "@heroui/tabs";
 import { Skeleton } from "@heroui/skeleton";
 import { DatePicker } from "@heroui/date-picker";
 import { Input, Textarea } from "@heroui/input";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form } from "@heroui/form";
-import React, { memo, useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { User } from "@supabase/supabase-js";
-import { Button } from "@/components/ui/button";
+import React, { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { DateValue, getLocalTimeZone, now } from "@internationalized/date";
 import { Avatar } from "@heroui/avatar";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
@@ -32,6 +28,8 @@ import { useHabitContext } from '../context/habit-context';
 import Link from 'next/link';
 import { CompletionHistoryLineChart } from '@/components/completion-history';
 import { useUserContext } from '../context/user-context';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
 
 
 export default function DashboardPage() {
