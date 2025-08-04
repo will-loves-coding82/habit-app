@@ -1,3 +1,4 @@
+import { User } from "@supabase/supabase-js";
 import { Dispatch, SetStateAction } from "react";
 
 export type Habit = {
@@ -43,16 +44,17 @@ export type ChatMessage = {
 }
 
 
-
-
 export type Error = {
     message: string
 }
 
 
-export interface HabitContextProviderProps {
-    children: React.ReactNode
+
+export interface UserContextProps {
+    user: User,
+    isLoadingUser: boolean
 }
+
 
 export interface HabitContextProps {
     isAddingHabit: boolean,
@@ -77,4 +79,12 @@ export interface HabitContextProps {
     onUpdateHabit: (habit: Habit | null, new_title: string | null, new_description: string | null) => Promise<void>,
     onDeleteHabit: (habit: Habit) => Promise<void>,
     onDeleteUniqueHabit: (habit: Habit) => Promise<void>
+}
+
+export type HabitCardProps = {
+    habit: Habit, 
+    type: string, 
+    isDeleting: boolean, 
+    onCompleteHabit: (habit: Habit, completed: boolean) => void, 
+    onDeleteHabit: (habit: Habit) => void
 }

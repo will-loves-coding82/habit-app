@@ -1,15 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { CompletionHistory, Habit } from "../types";
 import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { addToast } from "@heroui/toast";
 import { cn } from "@heroui/theme";
 import { getEndOfWeek, getStartOfWeek } from "@/lib/functions";
+import { redirect } from "next/navigation";
 
 
-export function useHabits(user: User | null) {
+export function useHabits(user: User) {
 
     const supabase = createClient();
 
@@ -25,24 +26,29 @@ export function useHabits(user: User | null) {
     const [completionHistory, setCompletionHistory] = useState<CompletionHistory>([]);
 
     
+
+
     useEffect(() => {
-        const fetchData = () => {
+        const fetchHabitData = () => {
             fetchTotalHabits();
             fetchTodayHabits();
             fetchHabitsThisWeek();
             fetchCompletionHistory();
             fetchUniqueHabits();
         }
-        if (user) {fetchData()}
+        if (user) {fetchHabitData()}
     }, [user]);
 
 
-    const refreshHabits = () => {
-        fetchCompletionHistory();
-        fetchTodayHabits();
-        fetchHabitsThisWeek();
-        fetchTotalHabits();
-        fetchUniqueHabits();
+    const refreshHabits =  async() => {
+            console.log("refreshing habit data. User is: ", user)
+            fetchCompletionHistory();
+            fetchTodayHabits();
+            fetchHabitsThisWeek();
+            fetchTotalHabits();
+            fetchUniqueHabits();
+        
+       
     }
     
 
@@ -365,12 +371,8 @@ export function useHabits(user: User | null) {
         }
 
         else {
-            // setUniqueHabits(prev => 
-            //     prev.filter(h => h.id !== habit.id)
-            // )
-
             refreshHabits();
-
+            
             addToast({
                 title: "Habit Deleted",
                 description: "Successfully deleted habit!",
@@ -379,7 +381,10 @@ export function useHabits(user: User | null) {
                 }
             });
         }
-    },[])
+
+        setIsDeletingHabit(false);
+
+    },[user])
 
     const onDeleteHabit = useCallback(async (habit: Habit) => {
         setIsDeletingHabit(true);
@@ -433,7 +438,7 @@ export function useHabits(user: User | null) {
         }
 
         setIsDeletingHabit(false);
-    }, []);
+    }, [user]);
     
 
     return {

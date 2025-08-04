@@ -1,8 +1,8 @@
-import { AnimatePresence, motion } from "motion/react"
-import { Habit } from "@/app/types";
+import { motion } from "motion/react"
+import { HabitCardProps } from "@/app/types";
 import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
 import { Alert } from "@heroui/alert";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownSection, DropdownItem } from "@heroui/dropdown";
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar, Ellipsis } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -12,10 +12,8 @@ import { useTheme } from "next-themes";
 import { isHabitCompletedOnTime, isHabitLate } from "@/lib/functions";
 
 
-export default function HabitCard(
-    { habit, type, isDeleting, onCompleteHabit, onDeleteHabit }:
-        { habit: Habit, type: string, isDeleting: boolean, onCompleteHabit: (habit: Habit, completed: boolean) => void, onDeleteHabit: (habit: Habit) => void }
-) {
+
+export default function HabitCard({ habit, type, isDeleting, onCompleteHabit, onDeleteHabit } : HabitCardProps) {
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const { resolvedTheme } = useTheme();

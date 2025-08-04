@@ -5,7 +5,7 @@ import { Avatar } from "@heroui/avatar";
 import { Key, useActionState, useCallback, useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from "@heroui/table";
-import { useHabitContext } from "@/app/context/context";
+import { useHabitContext } from "@/app/context/habit-context";
 import { Habit } from "../../types";
 import { Skeleton } from "@heroui/skeleton";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
@@ -19,6 +19,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Form } from "@heroui/form";
 import { describe } from "node:test";
 import { title } from "process";
+import { useUserContext } from "@/app/context/user-context";
 
 export default function ProfilePage() {
 
@@ -26,8 +27,11 @@ export default function ProfilePage() {
     const [avatarURL, setAvatarURL] = useState<string | null>(null);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [downloadingAvatar, setDownloadingAvatar] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
+    const { ...userProps } = useUserContext();
 
+    const user = userProps.user
+    const isLoadingUser = userProps.isLoadingUser
+    
     const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
     const [formData, setFormData] = useState<{
         title: string | null,
@@ -47,20 +51,6 @@ export default function ProfilePage() {
         onDeleteUniqueHabit,
         onUpdateHabit
     } = useHabitContext();
-
-    const fetchUserData = async () => {
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data?.user) {
-            console.log(error)
-        }
-        else {
-            setUser(data.user);
-        }
-    }
-
-    useEffect(() => {
-        fetchUserData();
-    }, [])
 
     useEffect(() => {
         async function downloadImage() {

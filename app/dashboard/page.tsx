@@ -21,30 +21,30 @@ import { ScrollShadow } from "@heroui/scroll-shadow";
 import { Progress } from "@heroui/progress";
 import { createHabitAction, CreateHabitFormState } from "./actions";
 import { cn } from "@heroui/theme";
-import { ChatMessage, CompletionHistory, Habit } from "../types";
+import { ChatMessage, Habit } from "../types";
 import HabitCard from "@/components/habit-card";
 import { Label } from "@radix-ui/react-label";
 import { BarChart, BotMessageSquare, Flame, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useStreaks } from "../hooks/useStreaks";
 import { CustomTooltip } from '@/components/ui/chart-tooltip';
-import { useHabitContext } from '../context/context';
+import { useHabitContext } from '../context/habit-context';
 import Link from 'next/link';
 import { CompletionHistoryLineChart } from '@/components/completion-history';
+import { useUserContext } from '../context/user-context';
 
 
 export default function DashboardPage() {
 
   const supabase = createClient();
+  const { ...userProps } = useUserContext();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoadingUser, setisLoadingUser] = useState(true);
+  const user = userProps.user
+  const isLoadingUser = userProps.isLoadingUser
   
   const [avatarURL, setAvatarURL] = useState<string | null>(null);
-  const [downloadingAvatar, setDownloadingAvatar] = useState(false);
-
+  const [donwloadingAvatar, setDownloadingAvatar] = useState(false);
   const [selected, setSelected] = useState("Today");
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
 
@@ -180,19 +180,7 @@ export default function DashboardPage() {
       }));
   };
 
-  const fetchUserData = async () => {
 
-    setisLoadingUser(true);
-    const { data, error } = await supabase.auth.getUser();
-
-    if (error || !data?.user) {
-      redirect("/auth/login");
-    }
-    else {
-      setUser(data.user);
-    }
-    setisLoadingUser(false);
-  }
 
   async function fetchChat(): Promise<number | null> {
 
@@ -310,9 +298,6 @@ export default function DashboardPage() {
     }
   }, [isChatOpen, chatMessages])
 
-  useEffect(() => {
-    fetchUserData();
-  }, [])
 
   useEffect(() => {
         
