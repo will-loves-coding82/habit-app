@@ -29,6 +29,8 @@
 * [React Chart JS 2](https://react-chartjs-2.js.org)
 * [Tailwind CSS](https://tailwindcss.com)
 * [Hero UI Library](https://www.heroui.com)
+* [Motion Animation](https://motion.dev)
+* [Supabase](https://supabase.com)
 
 
 ## Demo
