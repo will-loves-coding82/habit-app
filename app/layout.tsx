@@ -36,7 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       {/* Should prevent automatic zooming when typing on mobile devices */}
-      <meta name="viewport" content="width=device-width, user-scalable=no" />
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      </head>
 
       <body className={`${leagueSpartan.className} antialiased`}>
         <UserProvider>
