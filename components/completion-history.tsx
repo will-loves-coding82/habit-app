@@ -43,7 +43,6 @@ export const CompletionHistoryLineChart = memo(({ completionHistory, todayHabits
             borderColor: 'rgba(46, 136, 172, 1)',
             tension: 0.3,
             pointBackgroundColor: 'rgba(46, 136, 172, 1)'
-            // pointRadius: 0
         }],
     }
 
