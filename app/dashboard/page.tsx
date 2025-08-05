@@ -122,7 +122,7 @@ export default function DashboardPage() {
           userPrompt: chatInput,
           chatId: chatId,
           userId: user.id,
-          timezone: getLocalTimeZone()
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         }),
         method: 'POST'
       });
