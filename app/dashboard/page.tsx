@@ -713,7 +713,7 @@ export default function DashboardPage() {
                         disableAnimation
                         isRequired
                         showMonthAndYearPickers
-                        // minValue={today(getLocalTimeZone())} // this causes time zone discrepancies when submitting
+                        minValue={today(getLocalTimeZone())} // this causes time zone discrepancies when submitting
                         label="due date"
                         name="due_date"
                         variant="bordered"
