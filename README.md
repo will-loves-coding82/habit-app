@@ -1,9 +1,10 @@
-![dashboard preview](/public/readme/hero.png)
-![dashboard preview](/public/readme/dashboard.png)
+ ![dashboard preview](/public/readme/hero.png)
+ ![dashboard preview](/public/readme/dashboard.png)
 
 ## Features
+
 * User Auth with Supabase
-* Create, Edit, and Delete habits with Supabase PostgreSQL 
+* Create, Edit, and Delete habits with Supabase PostgreSQL
 * Daily cron jobs that duplicate your habits each day and track your streaks
 * Essential statistics in a personal dashboard to track your progress
 * Chat GPT LLM Assistant via Edge Functions
@@ -11,10 +12,11 @@
 * Profile page with avatar photo customization
 
 ## Project Structure
+
 * /app: Entrypoint to the home page
 * /hooks: Reusable logic to manage complex state operations
 * /context: Centralizes and manages state for downstream client components
-* /dashboard: 
+* /dashboard:
   * /profile: User profile management
   * /actions: Server actions for creating new habits
 * /auth: Routes for user authentication
@@ -25,19 +27,24 @@
 
 
 ## Tools
+
 * TypeScript
 * [React Chart JS 2](https://react-chartjs-2.js.org)
 * [Tailwind CSS](https://tailwindcss.com)
 * [Hero UI Library](https://www.heroui.com)
 * [Motion Animation](https://motion.dev)
 * [Supabase](https://supabase.com)
+* [Vercel AI SDK Tooling](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling#multi-step-calls-using-stopwhen)
 
 
 ## Demo
+
 You can view a fully working demo at [stacked-habits.vercel.app](https://stacked-habits.vercel.app/).
 
 
 ## Clone and run locally
+
+
 1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
 2. Create a Next.js app using the Supabase Starter template npx command
 
@@ -75,3 +82,5 @@ You can view a fully working demo at [stacked-habits.vercel.app](https://stacked
 6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
 
 > Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+
+
