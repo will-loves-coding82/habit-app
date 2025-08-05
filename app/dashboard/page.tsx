@@ -7,7 +7,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form } from "@heroui/form";
 import React, { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { DateValue, getLocalTimeZone, now, today } from "@internationalized/date";
+import { CalendarDate, DateValue, getLocalTimeZone, now, today } from "@internationalized/date";
 import { Avatar } from "@heroui/avatar";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
@@ -70,7 +70,7 @@ export default function DashboardPage() {
   const [addFormData, setAddFormData] = useState<{
     title: string,
     description: string,
-    due_date: DateValue | null,
+    due_date: CalendarDate | null,
     is_weekly: boolean
   }>({
     title: "",
@@ -150,7 +150,7 @@ export default function DashboardPage() {
     setChatInput(value);
   };
 
-  const handleDueDateChange = (value: DateValue | null) => {
+  const handleDueDateChange = (value: CalendarDate | null) => {
     if (value == null) {
       return
     }
@@ -471,7 +471,8 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground text-sm">Past 7 days</p>
                   </article>
 
-                <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits}/>                </div>
+                  <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits}/>               
+                </div>
 
                 <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
                   <span className="flex justify-between items-center">
