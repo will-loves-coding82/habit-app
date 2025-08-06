@@ -33,11 +33,8 @@ import { Button } from '@/components/ui/button';
 export default function DashboardPage() {
 
   const supabase = createClient();
-  const { ...userProps } = useUserContext();
+  const { user, isLoadingUser } = useUserContext();
 
-  const user = userProps.user
-  const isLoadingUser = userProps.isLoadingUser
-  
   const [avatarURL, setAvatarURL] = useState<string | null>(null);
   const [donwloadingAvatar, setDownloadingAvatar] = useState(false);
   const [selected, setSelected] = useState("Today");

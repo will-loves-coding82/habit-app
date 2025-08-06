@@ -375,26 +375,6 @@ export function useHabits(user: User) {
                     base: cn(["mb-4 mr-4"])
                 }
             });
-
-            /* let day = new Date(habit.due_date)
-            let dayOfWeek = day.toLocaleString("en-US", {
-                weekday: "long"
-            })
-
-            setWeekHabits((prev) => {
-                if (prev.has(dayOfWeek)) {
-                    const filtered = prev.get(dayOfWeek)!.filter(h => (h.id != habit.id) || (h.parent_id != habit.parent_id));
-                    if (filtered.length == 0) {
-                        prev.delete(dayOfWeek);
-                    }
-                    prev.set(dayOfWeek, filtered);
-                }
-                
-                return prev;
-            });
-
-            setTodayHabits(prev => prev.filter((h) => (h.id !== habit.id) || (h.parent_id != habit.parent_id)))
- */
         }
 
         setIsDeletingHabit(false);

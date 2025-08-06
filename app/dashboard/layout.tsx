@@ -1,7 +1,7 @@
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import Link from "next/link";
 import { DashboardAuthButton } from "@/components/dashboard-auth-button";
-import Providers from "./providers";
+import Providers from "./toast-provider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Menu } from "lucide-react";
+import ToastProvider from "./toast-provider";
+import HabitProvider from "../context/habit-context";
+import UserProvider from "../context/user-context";
+import ToastProviders from "./toast-provider";
 
 export default function ProtectedLayout({
   children,
@@ -55,12 +59,14 @@ export default function ProtectedLayout({
           </div>
         </nav>
 
-
-          <Providers>
-            {children}
-          </Providers>
-
-
+        <UserProvider>
+          <HabitProvider>
+            <ToastProviders>
+              {children}
+            </ToastProviders>
+          </HabitProvider>
+        </UserProvider>
+          
         <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
           <p>
             Powered by{" "}

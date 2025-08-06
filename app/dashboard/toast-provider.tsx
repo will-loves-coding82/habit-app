@@ -3,7 +3,7 @@ import {HeroUIProvider} from '@heroui/system'
 import {ToastProvider} from "@heroui/toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-export default function Providers({children}: {
+export default function ToastProviders({children}: {
   children: React.ReactNode;
 }) {
 

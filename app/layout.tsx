@@ -41,20 +41,14 @@ export default function RootLayout({
       </head>
 
       <body className={`${leagueSpartan.className} antialiased`}>
-        <UserProvider>
-
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
             disableTransitionOnChange
           >
-            <HabitProvider>
               {children}
-            </HabitProvider>
           </ThemeProvider>
-        </UserProvider>
-
       </body>
     </html>
   );
