@@ -161,7 +161,6 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
 
                             <p className="text-muted-foreground mr-4">
                                 {new Date(habit.due_date).toLocaleString("en-US", {
-                                    timeZone: "UTC", // compensate for time zone differences in Supabase DB
                                     month: "short",
                                     day: "numeric",
                                     hour: "numeric",
