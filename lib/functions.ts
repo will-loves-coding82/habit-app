@@ -61,5 +61,5 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
 }
 
 export function isHabitLate(habit: Habit) : boolean {
-    return !habit.is_complete && new Date() > new Date(habit.due_date);
+    return !habit.is_complete && Date.now() > new Date(habit.due_date).getTime();
 }
