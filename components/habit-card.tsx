@@ -33,7 +33,7 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
     const isCompletedOnTime = isHabitCompletedOnTime(habit);
     const isLate = isHabitLate(habit);
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+    const formatter = new Intl.DateTimeFormat('UTC', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' });
 
 
     const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
