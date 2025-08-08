@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "motion/react"
 import { HabitCardProps } from "@/app/types";
 import { Card, CardHeader, CardBody } from "@heroui/card";
