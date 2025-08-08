@@ -7,7 +7,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form } from "@heroui/form";
 import React, { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDate, DateValue, getLocalTimeZone, now, today, ZonedDateTime } from "@internationalized/date";
+import { CalendarDate, CalendarDateTime, DateValue, getLocalTimeZone, now, today, ZonedDateTime } from "@internationalized/date";
 import { Avatar } from "@heroui/avatar";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
@@ -67,7 +67,7 @@ export default function DashboardPage() {
   const [addFormData, setAddFormData] = useState<{
     title: string,
     description: string,
-    due_date: ZonedDateTime | null,
+    due_date: CalendarDateTime | null,
     is_weekly: boolean
   }>({
     title: "",
@@ -147,7 +147,7 @@ export default function DashboardPage() {
     setChatInput(value);
   };
 
-  const handleDueDateChange = (value: ZonedDateTime | null) => {
+  const handleDueDateChange = (value: CalendarDateTime | null) => {
     if (value == null) {
       return
     }

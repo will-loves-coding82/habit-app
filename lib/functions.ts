@@ -48,13 +48,21 @@ export function calculateBaseWeekDays() : string[] {
 
 
 export function isHabitCompletedOnTime(habit: Habit) : boolean {
-    const dueDate = new Date(habit.due_date).getTime();
-    const completedDate = habit.completed_date ? new Date(habit.completed_date).getTime() : null;
+
+    console.log("Due Date: ", habit.due_date)
+    console.log("Completed Date: ", habit.completed_date)
+
+    const dueDate = new Date(habit.due_date).getUTCDate();
+    const completedDate = habit.completed_date ? new Date(habit.completed_date).getUTCDate() : null;
+
+    console.log("UTC due date: ", dueDate )
+    console.log("UTC completed date: ", completedDate )
+
 
     if (!completedDate) {
         return false;
     }
-    if (completedDate < dueDate) {
+    if (completedDate <= dueDate) {
         return true;
     }
     return false
