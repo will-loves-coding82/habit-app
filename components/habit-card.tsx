@@ -34,6 +34,7 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
     const isLate = isHabitLate(habit);
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+    console.log('userTimeZone: ', userTimeZone)
 
     const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
