@@ -12,11 +12,13 @@ export async function createHabitAction(previousState: CreateHabitFormState, for
     const supabase = await createClient();
     const user = await supabase.auth.getUser();
 
-    const dueDate = Date.parse(formData.get("due_date") as string);
+    const timeStamp = Date.parse(formData.get("due_date") as string);
+    console.log("saving due date into db: ", new Date(timeStamp).toISOString())
+    
     const {error} = await supabase.from("habits").insert({
         title: formData.get("title") as string,
         description: formData.get("description") as string,
-        due_date: new Date(formData.get("due_date") as string),
+        due_date: new Date(timeStamp).toISOString(),
         recurrence_type: formData.get("is_weekly") === "true" ? "weekly" : "daily",
         is_parent: true
     })
