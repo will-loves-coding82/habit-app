@@ -67,7 +67,7 @@ export default function DashboardPage() {
   const [addFormData, setAddFormData] = useState<{
     title: string,
     description: string,
-    due_date: CalendarDateTime | null,
+    due_date: DateValue | null,
     is_weekly: boolean
   }>({
     title: "",
@@ -147,7 +147,7 @@ export default function DashboardPage() {
     setChatInput(value);
   };
 
-  const handleDueDateChange = (value: CalendarDateTime | null) => {
+  const handleDueDateChange = (value: DateValue | null) => {
     if (value == null) {
       return
     }
