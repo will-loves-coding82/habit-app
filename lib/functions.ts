@@ -8,8 +8,6 @@ export function getStartOfWeek() : Date {
         date.setHours(0,0,0,0)
         date.setDate(date.getDate() - day);
     }
-
-    console.log("Start of week: ", date)
     return date
 }
 
@@ -17,12 +15,10 @@ export function getStartOfWeek() : Date {
 export function getEndOfWeek() : Date {
     const date = new Date()
     const day = date.getDay()
-    console.log("today's day number: ", day)
     if ( day < 7) {
         date.setHours(23,59,0,0)
         date.setDate(date.getDate() + (7-day));
     }
-    console.log("End of week: ", date)
     return date
 }
 
@@ -42,7 +38,6 @@ export function calculateBaseWeekDays() : string[] {
                 weekday: "short"
             })
 
-            console.log("setting base week day: ", lastWeekName)
             list.push(lastWeekName)
             lastWeek.setDate(lastWeek.getDate() + 1)
         }

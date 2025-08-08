@@ -79,7 +79,6 @@ export function useHabits(user: User) {
                 const day = new Date(row.due_date).toLocaleString("en-US", {
                     weekday: "short"
                 })
-                console.log("setting date: ", day)
                 const count = mapOfCounts.get(day)
                 if (!count && row.is_complete) {
                     mapOfCounts.set(day, 1)
