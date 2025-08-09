@@ -253,14 +253,16 @@ export function useHabits(user: User) {
 
     const onCompleteHabit = useCallback(async (habit: Habit, is_complete: boolean) => {
 
-        const completed_date = is_complete ? new Date().toISOString() : null;
+        const completed_date = is_complete ? new Date().toLocaleDateString('en-US') : null;
         const todayNumber = Number(new Date(0,0,0,0).getDay())
         
-        console.log("todayNumber", todayNumber)
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const localISO = now.toISOString().slice(0, 19); 
 
         const { error } = await supabase
             .from("habits")
-            .update({ is_complete: is_complete, completed_date: completed_date })
+            .update({ is_complete: is_complete, completed_date: is_complete ? localISO : null })
             .eq("id", habit.id.toString());
 
         if (!error) {
