@@ -172,7 +172,7 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
                             {habit.is_complete && !isCompletedOnTime && 
                                 <motion.p key="completed_late" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0, opacity: 0 }}  className="text-warning px-2 py-[2px] bg-warning/25 text-warning rounded-md">completed late</motion.p>
                             }
-                            {isLate && 
+                            {!habit.is_complete && isLate && 
                                 <motion.p key="late" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0, opacity: 0 }}  className="text-danger px-2 py-[2px] bg-danger/25 rounded-md">late</motion.p>
                             }
                         </div>

@@ -257,8 +257,9 @@ export function useHabits(user: User) {
         const todayNumber = Number(new Date(0,0,0,0).getDay())
         
         const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        const localISO = now.toISOString().slice(0, 19); 
+        const localISO = now.toISOString()
+        // now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        // const localISO = now.toISOString().slice(0, 19); 
 
         const { error } = await supabase
             .from("habits")
