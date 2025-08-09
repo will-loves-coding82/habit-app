@@ -72,7 +72,7 @@ export function isHabitLate(habit: Habit) : boolean {
     const dueDate = new Date(habit.due_date)
 
     console.log("----------<")
-    console.log(`Getting now date for ${habit.title}: ${now}}`)
+    console.log(`Getting now date for ${habit.title}: ${now.toISOString()}}`)
     console.log(`UTC dueDate for habit ${habit.title} is: ${dueDate.toISOString()}`)
     console.log(`----------<`)
     
