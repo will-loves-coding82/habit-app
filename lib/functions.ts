@@ -52,40 +52,34 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
     // console.log("Due Date: ", habit.due_date)
     // console.log("Completed Date: ", habit.completed_date)
 
-    // const dueDate = new Date(habit.due_date);
-    // const completedDate = habit.completed_date ? new Date(habit.completed_date) : null;
-
-    // console.log("UTC due date: ", dueDate )
-    // console.log("UTC completed date: ", completedDate )
-
-
-    // if (!completedDate) {
-    //     return false;
-    // }
-    // if (completedDate < dueDate) {
-    //     return true;
-    // }
-    // return false
-     const dueDate = new Date(habit.due_date);
+    const dueDate = new Date(habit.due_date);
     const completedDate = habit.completed_date ? new Date(habit.completed_date) : null;
-    
+
+    console.log(`UTC due date for habit ${habit.title} is: ${dueDate}`)
+    console.log(`UTC completed date for habit ${habit.title} is: ${completedDate}`)
+
     if (!completedDate) {
         return false;
     }
+    if (completedDate < dueDate) {
+        return true;
+    }
+    return false
+
+    // const dueDate = new Date(habit.due_date);
+    // const completedDate = habit.completed_date ? new Date(habit.completed_date) : null;
     
-    // Convert both to local time for comparison
-    const localDueDate = new Date(dueDate.getTime() - dueDate.getTimezoneOffset() * 60000);
-    const localCompletedDate = new Date(completedDate.getTime() - completedDate.getTimezoneOffset() * 60000);
+    // if (!completedDate) {
+    //     return false;
+    // }
     
-    return localCompletedDate < localDueDate;
+    // // Convert both to local time for comparison
+    // const localDueDate = new Date(dueDate.getTime() - dueDate.getTimezoneOffset());
+    // const localCompletedDate = new Date(completedDate.getTime() - completedDate.getTimezoneOffset());
+    
+    // return localCompletedDate < localDueDate;
 }
 
-export function isHabitLate(habit: Habit): boolean {
-    const now = new Date();
-    const dueDate = new Date(habit.due_date);
-  
-    const nowUTC = new Date(now.getTime());
-    const localDueDate = new Date(dueDate.getTime() - dueDate.getTimezoneOffset() * 60000);
-
-    return !habit.is_complete && (nowUTC > localDueDate);
+export function isHabitLate(habit: Habit) : boolean {
+    return !habit.is_complete && new Date() > new Date(habit.due_date);
 }
