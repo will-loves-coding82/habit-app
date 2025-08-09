@@ -61,11 +61,8 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
     const completedDate = new Date(habit.completed_date)
     const localCompletedDate = new Date(completedDate.getTime() + completedDate.getTimezoneOffset())
 
-    if (habit.title === "new local") {
-
-        console.log(`UTC due date for habit ${habit.title} is: ${localDueDate}`)
-        console.log(`UTC completed date for habit ${habit.title} is: ${localCompletedDate}`)
-    }
+    console.log(`UTC completed date for habit ${habit.title} is: ${localCompletedDate}`)
+    
     if (!completedDate) {
         return false;
     }
@@ -96,12 +93,11 @@ export function isHabitLate(habit: Habit) : boolean {
     const dueDate = new Date(habit.due_date)
     const localDueDate = new Date(dueDate.getTime())
 
-    if (habit.title === "new local") {
     console.log("----------b")
     console.log(`Getting now date for ${habit.title}: ${now}}`)
     console.log(`UTC dueDate for habit ${habit.title} is: ${localDueDate}`)
     console.log(`----------^`)
-    }
+    
 
     return !habit.is_complete && (date > localDueDate);
 }
