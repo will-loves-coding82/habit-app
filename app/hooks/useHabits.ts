@@ -276,7 +276,7 @@ export function useHabits(user: User) {
             
             setTodayHabits((prev) =>
                 prev?.map((h) =>
-                    h.id === habit.id ? { ...habit, is_complete, completed_date } : h
+                    h.id === habit.id ? { ...habit, is_complete, localISO } : h
                 )
             );
 
@@ -287,7 +287,7 @@ export function useHabits(user: User) {
           
             setWeekHabits((prev) => {
                 if (prev.has(dayOfWeek)) {
-                    const filtered = prev.get(dayOfWeek)!.map((h) =>   h.id === habit.id ? { ...habit, is_complete, completed_date } : h)
+                    const filtered = prev.get(dayOfWeek)!.map((h) =>   h.id === habit.id ? { ...habit, is_complete, localISO } : h)
                     prev.set(dayOfWeek, filtered);
                 }
                 return prev;
