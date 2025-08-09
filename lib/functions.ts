@@ -49,55 +49,33 @@ export function calculateBaseWeekDays() : string[] {
 
 export function isHabitCompletedOnTime(habit: Habit) : boolean {
 
-    // console.log("Due Date: ", habit.due_date)
-    // console.log("Completed Date: ", habit.completed_date)
     if (!habit.completed_date) {
         return false
     }
 
     const dueDate = new Date(habit.due_date)
-    const localDueDate = new Date(dueDate.getTime())
-
     const completedDate = new Date(habit.completed_date)
-    const localCompletedDate = new Date(completedDate.getTime() + completedDate.getTimezoneOffset())
-
-    console.log(`UTC completed date for habit ${habit.title} is: ${localCompletedDate}`)
+    console.log(`UTC completed date for habit ${habit.title} is: ${dueDate.toISOString()}`)
     
     if (!completedDate) {
         return false;
     }
-    if (completedDate < localDueDate) {
+    if (completedDate.toISOString() < dueDate.toISOString()) {
         return true;
     }
     return false
-
-    // const dueDate = new Date(habit.due_date);
-    // const completedDate = habit.completed_date ? new Date(habit.completed_date) : null;
-    
-    // if (!completedDate) {
-    //     return false;
-    // }
-    
-    // // Convert both to local time for comparison
-    // const localDueDate = new Date(dueDate.getTime() - dueDate.getTimezoneOffset());
-    // const localCompletedDate = new Date(completedDate.getTime() - completedDate.getTimezoneOffset());
-    
-    // return localCompletedDate < localDueDate;
 }
 
 export function isHabitLate(habit: Habit) : boolean {
 
-    const date = new Date()
-    const now = new Date(date.getTime() - date.getTimezoneOffset())
-
+    const now = new Date()
     const dueDate = new Date(habit.due_date)
-    const localDueDate = new Date(dueDate.getTime())
 
-    console.log("----------b")
+    console.log("----------<")
     console.log(`Getting now date for ${habit.title}: ${now}}`)
-    console.log(`UTC dueDate for habit ${habit.title} is: ${localDueDate}`)
-    console.log(`----------^`)
+    console.log(`UTC dueDate for habit ${habit.title} is: ${dueDate.toISOString()}`)
+    console.log(`----------<`)
     
 
-    return !habit.is_complete && (date > localDueDate);
+    return !habit.is_complete && (now.toISOString() > dueDate.toISOString());
 }
