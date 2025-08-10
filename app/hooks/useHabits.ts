@@ -255,12 +255,17 @@ export function useHabits(user: User) {
 
         const todayNumber = Number(new Date(0,0,0,0).getDay())
         const now = new Date();
-        console.log(`setting habit ${habit.title}completed date to: ${now}`)
+        const localUTC = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+        const localISO = localUTC.toISOString()
 
+        if (is_complete) {
+            console.log(`setting habit ${habit.title} completed date to: ${localUTC.toISOString()}`)
+        }
         const { error } = await supabase
             .from("habits")
-            .update({ is_complete: is_complete, completed_date: is_complete ? now : null })
-            .eq("id", habit.id.toString());
+            .update({ is_complete: is_complete, completed_date: is_complete ? localISO : null })
+            .eq("id", habit.id.toString())
+            
 
         if (!error) {
 
@@ -273,7 +278,7 @@ export function useHabits(user: User) {
             
             setTodayHabits((prev) =>
                 prev?.map((h) =>
-                    h.id === habit.id ? { ...habit, is_complete, now } : h
+                    h.id === habit.id ? { ...habit, is_complete, localUTC  } : h
                 )
             );
 
@@ -284,7 +289,7 @@ export function useHabits(user: User) {
           
             setWeekHabits((prev) => {
                 if (prev.has(dayOfWeek)) {
-                    const filtered = prev.get(dayOfWeek)!.map((h) =>   h.id === habit.id ? { ...habit, is_complete, now } : h)
+                    const filtered = prev.get(dayOfWeek)!.map((h) =>   h.id === habit.id ? { ...habit, is_complete, localUTC } : h)
                     prev.set(dayOfWeek, filtered);
                 }
                 return prev;
@@ -299,6 +304,7 @@ export function useHabits(user: User) {
                     }
                 });
             }
+
 
         } else {
             console.log("Error: ", error)
