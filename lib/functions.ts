@@ -100,10 +100,10 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
 export function isHabitLate(habit: Habit) : boolean {
 
     const now = new Date()
-    const dueDate = new Date(habit.due_date)
+    // const dueDate = new Date(habit.due_date)
     
-    // const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
-    console.log(habit.due_date)
+    const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
+    // console.log(habit.due_date)
 
     console.log("----------<")
     console.log(`Getting now date for ${habit.title}: ${now.toISOString()}`)
@@ -115,6 +115,11 @@ export function isHabitLate(habit: Habit) : boolean {
 }
 
 
+/**
+ * Converts a date string 
+ * @param date 
+ * @returns 
+ */
 export function convertToLocaleString(date: string) : string {
     return new Date(date).toLocaleString("en-US", {
         month: "short",
