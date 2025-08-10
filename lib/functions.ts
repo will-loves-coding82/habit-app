@@ -52,11 +52,7 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
     if (!habit.completed_date) {
         return false
     }
-
-    // const dueDate = new Date(habit.due_date)
     const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
-    // const completedDate = new Date(habit.completed_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
-
     const completedDate = new Date(habit.completed_date)
     console.log(`UTC completed date for habit ${habit.title} is: ${completedDate}`)
     
@@ -72,7 +68,6 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
 export function isHabitLate(habit: Habit) : boolean {
 
     const now = new Date()
-    // const dueDate = new Date(habit.due_date)
     const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
 
     console.log("----------<")
