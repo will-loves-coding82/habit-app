@@ -52,15 +52,24 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
     if (!habit.completed_date) {
         return false
     }
-    const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
+    // const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
     // const dueDate = new Date(habit.due_date)
-    const completedDate = new Date(habit.completed_date)
-    console.log(`UTC completed date for habit ${habit.title} is: ${completedDate.toISOString()}`)
-    
-    if (!completedDate) {
+    const dueDate = convertToLocaleString(habit.due_date)
+    const completedDate = convertToLocaleString(habit.completed_date)
+
+    // const completedDate = new Date(habit.completed_date)
+    // console.log(`UTC completed date for habit ${habit.title} is: ${completedDate.toISOString()}`)
+    if (habit.is_complete) {
+    console.log(`----isHabitComplete(${habit.title})----`)
+    console.log(`UTC completed date for habit ${habit.title} is: ${completedDate}`)
+    console.log(`UTC due date for habit ${habit.title} is: ${dueDate}`)
+    console.log('-----------------end----------------------')
+    }
+
+    if (!habit.completed_date) {
         return false;
     }
-    if (completedDate < dueDate) {
+    if (habit.completed_date < habit.due_date) {
         return true;
     }
     return false
@@ -81,4 +90,16 @@ export function isHabitLate(habit: Habit) : boolean {
     
 
     return !habit.is_complete && (now > dueDate);
+}
+
+
+export function convertToLocaleString(date: string) : string {
+    return new Date(date).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "UTC"
+    }).replace("at", "")
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { DateValue } from "@internationalized/date";
 
 export interface CreateHabitFormState {
     error: string | null;
@@ -10,12 +11,11 @@ export interface CreateHabitFormState {
 
 export async function createHabitAction(previousState: CreateHabitFormState, formData: FormData) : Promise<CreateHabitFormState> {
     const supabase = await createClient();
-    const user = await supabase.auth.getUser();
-
+    
     const {error} = await supabase.from("habits").insert({
         title: formData.get("title") as string,
         description: formData.get("description") as string,
-        due_date:  new Date(formData.get("due_date") as string).toISOString(),
+        due_date:  new Date(formData.get("due_date") as string).toISOString(), //todo: store in utc time
         recurrence_type: formData.get("is_weekly") === "true" ? "weekly" : "daily",
         is_parent: true
     })

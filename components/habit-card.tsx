@@ -32,9 +32,7 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
 
     const isCompletedOnTime = isHabitCompletedOnTime(habit);
     const isLate = isHabitLate(habit);
-    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', timeZone: 'UTC' });
-
 
     const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -163,7 +161,14 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
                             <Calendar className="w-4 h-4 text-xs mb-1 mr-2" />
 
                             <p className="text-muted-foreground mr-4">
-                                {formatter.format(new Date(habit.due_date)).replace("at", "")}
+                                {new Date(habit.due_date).toLocaleString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                    timeZone: "UTC"
+                                }).replace("at", "")}
                             </p>
 
                             {habit.is_complete && isCompletedOnTime && !isLate &&

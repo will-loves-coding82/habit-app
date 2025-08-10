@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { addToast } from "@heroui/toast";
 import { cn } from "@heroui/theme";
-import { calculateBaseWeekDays, getEndOfWeek, getStartOfWeek } from "@/lib/functions";
+import { calculateBaseWeekDays, convertToLocaleString, getEndOfWeek, getStartOfWeek } from "@/lib/functions";
 import { redirect } from "next/navigation";
 
 
@@ -135,10 +135,10 @@ export function useHabits(user: User) {
 
     const fetchTodayHabits = useCallback(async () => {
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        today.setUTCHours(0, 0, 0, 0);
 
         const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
         const { data, error } = await supabase
             .from("habits")
@@ -266,7 +266,6 @@ export function useHabits(user: User) {
             .update({ is_complete: is_complete, completed_date: is_complete ? localISO : null })
             .eq("id", habit.id.toString())
             
-
         if (!error) {
 
             // Update the completion history graph for today
@@ -278,7 +277,7 @@ export function useHabits(user: User) {
             
             setTodayHabits((prev) =>
                 prev?.map((h) =>
-                    h.id === habit.id ? { ...habit, is_complete, localUTC  } : h
+                    h.id === habit.id ? { ...habit, is_complete: is_complete, completed_date: localISO  } : h
                 )
             );
 
@@ -289,7 +288,7 @@ export function useHabits(user: User) {
           
             setWeekHabits((prev) => {
                 if (prev.has(dayOfWeek)) {
-                    const filtered = prev.get(dayOfWeek)!.map((h) =>   h.id === habit.id ? { ...habit, is_complete, localUTC } : h)
+                    const filtered = prev.get(dayOfWeek)!.map((h) =>   h.id === habit.id ? { ...habit, is_complete: is_complete, completed_date: localISO } : h)
                     prev.set(dayOfWeek, filtered);
                 }
                 return prev;
