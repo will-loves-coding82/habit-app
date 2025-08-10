@@ -255,7 +255,7 @@ export function useHabits(user: User) {
 
         const todayNumber = Number(new Date(0,0,0,0).getDay())
         const now = new Date();
-        console.log("setting habit completed date to: ", now)
+        console.log(`setting habit ${habit.title}completed date to: ${now}`)
 
         const { error } = await supabase
             .from("habits")
