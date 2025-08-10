@@ -1,4 +1,5 @@
 import { Habit } from "@/app/types";
+import { useCallback } from "react";
 
 export function getStartOfWeek() : Date {
     const date = new Date()
@@ -47,7 +48,7 @@ export function calculateBaseWeekDays() : string[] {
 
 
 
-export function isHabitCompletedOnTime(habit: Habit) : boolean {
+export const isHabitCompletedOnTime = useCallback(function(habit: Habit) : boolean {
 
     if (!habit.completed_date) {
         return false
@@ -69,9 +70,9 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
         return true;
     }
     return false
-}
+},[])
 
-export function isHabitLate(habit: Habit) : boolean {
+export const isHabitLate = useCallback(function (habit: Habit) : boolean {
 
     const now = new Date()
     const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
@@ -83,10 +84,10 @@ export function isHabitLate(habit: Habit) : boolean {
     
 
     return !habit.is_complete && (now > dueDate);
-}
+},[])
 
 
-export function convertToLocaleString(date: string) : string {
+export const convertToLocaleString = useCallback(function(date: string) : string {
     return new Date(date).toLocaleString("en-US", {
         month: "short",
         day: "numeric",
@@ -95,4 +96,4 @@ export function convertToLocaleString(date: string) : string {
         hour12: true,
         timeZone: "UTC"
     }).replace("at", "")
-}
+},[])
