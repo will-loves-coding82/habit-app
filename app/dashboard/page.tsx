@@ -570,6 +570,7 @@ export default function DashboardPage() {
         <div className="w-full max-w-7xl flex justify-between bg-background items-center p-2 px-5 text-sm">
           <span className="flex gap-2 items-center">
             { avatarURL && <Avatar src={avatarURL} size="lg" className="w-6 h-6" classNames={{ icon: "text-primary w-16 h-16", base: "bg-accent mx-auto" }} /> }
+            { !avatarURL && <Avatar  size="sm" className="w-6 h-6" classNames={{ icon: "text-primary w-4 h-4", base: "bg-accent mx-auto" }} /> }
 
             {isLoadingUser ?
               <Skeleton className="rounded-lg w-24">
