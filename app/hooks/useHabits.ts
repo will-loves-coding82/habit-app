@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { addToast } from "@heroui/toast";
 import { cn } from "@heroui/theme";
-import { calculateBaseWeekDays, convertToLocaleString, getEndOfWeek, getStartOfWeek } from "@/lib/functions";
+import { calculateBaseWeekDays, getEndOfWeek, getStartOfWeek } from "@/lib/functions";
 import { redirect } from "next/navigation";
 
 
@@ -54,7 +54,6 @@ export function useHabits(user: User) {
         today.setHours(0, 0, 0, 0);
 
         const tomorrow = new Date(today.getDate() + 1)
-
         const lastWeek = new Date(today);
         lastWeek.setDate(today.getDate() - 6);
 
@@ -76,7 +75,8 @@ export function useHabits(user: User) {
             const mapOfCounts = new Map<string, number>();
 
             data.forEach(row => {
-                const day = new Date(row.due_date).toLocaleString("en-US", {
+                const dueDate = new Date(row.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
+                const day = dueDate.toLocaleString("en-US", {
                     weekday: "short"
                 })
                 const count = mapOfCounts.get(day)
@@ -134,9 +134,10 @@ export function useHabits(user: User) {
     }, [user])
 
     const fetchTodayHabits = useCallback(async () => {
-        const today = new Date();
-        today.setUTCHours(0, 0, 0, 0);
 
+        const now = new Date()
+        const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        
         const tomorrow = new Date(today);
         tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
@@ -167,9 +168,11 @@ export function useHabits(user: User) {
 
 
     const fetchHabitsThisWeek = useCallback(async () => {
-        const date = new Date();
+
         const weekStart = getStartOfWeek().toISOString();
         const weekEnd = getEndOfWeek().toISOString();
+
+        console.log(`fetching this week habits. Start: ${weekStart}\n End: ${weekEnd}`)
 
         const { data, error } = await supabase
             .from("habits")
@@ -196,7 +199,9 @@ export function useHabits(user: User) {
 
             // Organize habits by days in the week
             data.forEach((habit: Habit) => {
-                let date = new Date(habit.due_date);
+                // let date = new Date(habit.due_date);
+                const date = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
+
                 let day = date.toLocaleString("en-US", {
                     weekday: "long",
                 });
