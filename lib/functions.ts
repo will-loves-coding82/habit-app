@@ -5,6 +5,7 @@ import { Habit } from "@/app/types";
  * Determines the start of the current week
  */
 export function getStartOfWeek() : Date {
+    
     const date = new Date()
     const day = date.getDay()
 
@@ -12,7 +13,9 @@ export function getStartOfWeek() : Date {
         date.setHours(0,0,0,0)
         date.setDate(date.getDate() - day);
     }
-    return date
+
+    const start = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    return start
 }
 
 
@@ -20,13 +23,16 @@ export function getStartOfWeek() : Date {
  * Determines the end of the current week
  */
 export function getEndOfWeek() : Date {
+
     const date = new Date()
     const day = date.getDay()
     if ( day < 7) {
         date.setHours(23,59,0,0)
         date.setDate(date.getDate() + (7-day));
     }
-    return date
+
+    const end = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes()));
+    return end
 }
 
 
@@ -94,39 +100,24 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
 /**
  * Checks if a habit is late. This is true if the habit was not 
  * marked as completed after its due date passed.
+ * 
  * @param habit Represents a user's habit
  * @returns true or false
  */
 export function isHabitLate(habit: Habit) : boolean {
 
-    const now = new Date()
-    // const dueDate = new Date(habit.due_date)
-    
+    const now = new Date()    
+
+    // Strip the timezone metadata to compare with local time
     const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
-    // console.log(habit.due_date)
 
     console.log("----------<")
     console.log(`Getting now date for ${habit.title}: ${now.toISOString()}`)
     console.log(`habit ${habit.title} raw due date:  ${habit.due_date}`)
-    console.log(`UTC dueDate for habit ${habit.title} is: ${dueDate.toISOString()}`)
+    console.log(`dueDate for habit ${habit.title} is: ${dueDate}`)
     console.log(`----------<`)
     
     return !habit.is_complete && (now > dueDate);
 }
 
 
-/**
- * Converts a date string 
- * @param date 
- * @returns 
- */
-export function convertToLocaleString(date: string) : string {
-    return new Date(date).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-        timeZone: "UTC"
-    }).replace("at", "")
-}
