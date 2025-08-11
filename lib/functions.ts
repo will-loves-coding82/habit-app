@@ -3,6 +3,7 @@ import { Habit } from "@/app/types";
 
 /**
  * Determines the start of the current week
+ * @returns A Date object
  */
 export function getStartOfWeek() : Date {
     
@@ -21,6 +22,7 @@ export function getStartOfWeek() : Date {
 
 /**
  * Determines the end of the current week
+ * @returns A Date object
  */
 export function getEndOfWeek() : Date {
 
@@ -35,11 +37,31 @@ export function getEndOfWeek() : Date {
     return end
 }
 
+/**
+ * Determines the date from last week
+ * @returns A Date object
+ */
+export function getLastWeek() : Date {
+
+    const date = new Date()
+    const day = date.getDay()
+
+    if ( day !== 0) {
+        date.setHours(0,0,0,0)
+        date.setDate(date.getDate() - 6);
+    }
+
+    const start = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    return start
+}
+
+
 
 
 /**
  * Returns a rolling window of the past 7 days as strings
  * e.g. ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+ * @returns An array of strings
  */
 export function calculateBaseWeekDays() : string[] {
 
@@ -82,10 +104,10 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
         const dueDate = new Date(habit.due_date)
         // const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
 
-        console.log(`----isHabitComplete(${habit.title})----`)
-        console.log(`UTC completed date for habit ${habit.title} is: ${completedDate.toISOString()}`)
-        console.log(`UTC due date for habit ${habit.title} is: ${dueDate.toISOString()}`)
-        console.log('-----------------end----------------------')
+        // console.log(`----isHabitComplete(${habit.title})----`)
+        // console.log(`UTC completed date for habit ${habit.title} is: ${completedDate.toISOString()}`)
+        // console.log(`UTC due date for habit ${habit.title} is: ${dueDate.toISOString()}`)
+        // console.log('-----------------end----------------------')
     }
 
     if (!habit.completed_date) {
@@ -111,11 +133,11 @@ export function isHabitLate(habit: Habit) : boolean {
     // Strip the timezone metadata to compare with local time
     const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
 
-    console.log("----------<")
-    console.log(`Getting now date for ${habit.title}: ${now.toISOString()}`)
-    console.log(`habit ${habit.title} raw due date:  ${habit.due_date}`)
-    console.log(`dueDate for habit ${habit.title} is: ${dueDate}`)
-    console.log(`----------<`)
+    // console.log("----------<")
+    // console.log(`Getting now date for ${habit.title}: ${now.toISOString()}`)
+    // console.log(`habit ${habit.title} raw due date:  ${habit.due_date}`)
+    // console.log(`dueDate for habit ${habit.title} is: ${dueDate}`)
+    // console.log(`----------<`)
     
     return !habit.is_complete && (now > dueDate);
 }
