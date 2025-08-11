@@ -17,6 +17,14 @@ import { Input, Textarea } from "@heroui/input";
 import { Form } from "@heroui/form";
 import { useUserContext } from "@/app/context/user-context";
 
+
+/**
+ * 
+ * Defines the interace to view and update a user's profile picture
+ * and habits.
+ * 
+ * @returns React JSX
+ */
 export default function ProfilePage() {
 
     const supabase = createClient();

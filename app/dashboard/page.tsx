@@ -30,6 +30,15 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 
 
+/**
+ * 
+ * Defines the interace to view and update a user's habits. Comes 
+ * with statistics such as total habits, streaks, completion history, 
+ * and progress percentage. Users can also interact with a LLM 
+ * chatbot on this page as well.
+ * 
+ * @returns React JSX
+ */
 export default function DashboardPage() {
 
   const supabase = createClient();

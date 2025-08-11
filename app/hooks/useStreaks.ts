@@ -3,6 +3,9 @@ import { User } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
 
+/**
+ * Reusable custom hook that manages streak logic.
+ */
 export function useStreaks(user: User | null) {
 
     const supabase = createClient();
@@ -16,6 +19,9 @@ export function useStreaks(user: User | null) {
         }
     }, [user])
 
+     /**
+     * Fetches the user's current streak.
+     */
     const fetchStreak = async () => {
 
         const { data, error } = await supabase
@@ -39,6 +45,10 @@ export function useStreaks(user: User | null) {
         }
     }
 
+     /**
+     * Initializes a streak to 0 for a user. This is helpful when a user is 
+     * provisioned but their streak wasn't properly created in the beginning.
+     */
     const initializeStreak = async () => {
         const supabase = await createClient();
         const { error } = await supabase

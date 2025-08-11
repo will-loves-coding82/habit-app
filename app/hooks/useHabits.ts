@@ -10,10 +10,12 @@ import { calculateBaseWeekDays, getEndOfWeek, getLastWeek, getStartOfWeek } from
 import { redirect } from "next/navigation";
 
 
+/**
+ * Reusable custom hook that manages habit logic.
+ */
 export function useHabits(user: User) {
 
     const supabase = createClient();
-
     const [isAddingHabit, setIsAddingHabit] = useState(false);
     const [isDeletingHabit, setIsDeletingHabit] = useState(false);
     const [isLoadingUniqueHabits, setIsLoadingUniqueHabits] = useState(false);
@@ -25,8 +27,6 @@ export function useHabits(user: User) {
     const [completionHistory, setCompletionHistory] = useState<CompletionHistory>([]);
 
     
-
-
     useEffect(() => {
         const fetchHabitData = () => {
             fetchTodayHabits();
@@ -39,7 +39,6 @@ export function useHabits(user: User) {
 
 
     const refreshHabits =  async() => {
-        // console.log("refreshing habit data. User is: ", user)
         fetchCompletionHistory();
         fetchTodayHabits();
         fetchHabitsThisWeek();
@@ -47,15 +46,11 @@ export function useHabits(user: User) {
     }
 
 
-    // Rolling window of habits from past 7 days
+    /**
+     * Fetches habits from a rolling window of 7 days, and calculates how 
+     * many were completed for each day.
+     */
     const fetchCompletionHistory= async() => {
-
-        // const today = new Date();
-        // today.setHours(0, 0, 0, 0);
-
-        // const tomorrow = new Date(today.getDate() + 1)
-        // const lastWeek = new Date(today);
-        // lastWeek.setDate(today.getDate() - 6);
 
         const lastWeek = getLastWeek();
 
@@ -104,7 +99,6 @@ export function useHabits(user: User) {
             });
 
             // Format the list in ascending order of days 
-            // console.log("base week days: ", baseWeekDays)           
             const listOfCounts = baseWeekDays.map(day => ({
                 day: day,
                 count: mapOfCounts.get(day) || 0,
@@ -116,6 +110,9 @@ export function useHabits(user: User) {
     }
 
 
+    /**
+     * Fetches all the habits that the user created.
+     */
     const fetchUniqueHabits = useCallback(async() => {
         setIsLoadingUniqueHabits(true)
 
@@ -138,11 +135,15 @@ export function useHabits(user: User) {
         
     }, [user])
 
+
+    /**
+     * Fetches habits that fall between 12:00 AM and 11:59PM of the current day.
+     */
     const fetchTodayHabits = useCallback(async () => {
 
+        // Convert to UTC dates to match Supabase date types
         const now = new Date()
         const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-        
         const tomorrow = new Date(today);
         tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
@@ -172,6 +173,9 @@ export function useHabits(user: User) {
     }, [user])
 
 
+    /**
+     * Fetches habits that fall between the monday and sunday of this week.
+     */
     const fetchHabitsThisWeek = useCallback(async () => {
 
         const weekStart = getStartOfWeek().toISOString();
@@ -222,6 +226,12 @@ export function useHabits(user: User) {
     }, [user])
 
 
+    /**
+     * Callback function that updates a habit's completion status
+     * @params habit The habit object
+     * @params new_title The new title to update
+     * @params new_description The new description to update
+     */
     const onUpdateHabit = useCallback(async(habit: Habit | null, new_title: string | null, new_description: string | null) => {
         setIsUpdatingHabit(true)
         
@@ -261,6 +271,11 @@ export function useHabits(user: User) {
 
     }, [user])
 
+
+    /**
+     * Callback function that updates a habit's title and description. 
+     * @params is_complete A Boolean value
+     */
     const onCompleteHabit = useCallback(async (habit: Habit, is_complete: boolean) => {
 
         const todayNumber = Number(new Date(0,0,0,0).getDay())
@@ -328,6 +343,12 @@ export function useHabits(user: User) {
         }
     }, [])
 
+    /**
+     * Callback function that deletes a unique or parent habit. This effectively 
+     * performs a CASCADE delete on all other children habits that reference it.
+     * 
+     * @params habit The habit to delete
+     */
     const onDeleteUniqueHabit = useCallback(async (habit: Habit) => {
         setIsDeletingHabit(true);
 
@@ -359,6 +380,13 @@ export function useHabits(user: User) {
 
     },[user])
 
+
+     /**
+     * Callback function that deletes a habit by deleting its parent habit to 
+     * perform a CASCADE delete.
+     * 
+     * @params habit The habit to delete
+     */
     const onDeleteHabit = useCallback(async (habit: Habit) => {
         setIsDeletingHabit(true);
 
