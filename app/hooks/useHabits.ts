@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { addToast } from "@heroui/toast";
 import { cn } from "@heroui/theme";
-import { calculateBaseWeekDays, getEndOfWeek, getStartOfWeek } from "@/lib/functions";
+import { calculateBaseWeekDays, getEndOfWeek, getLastWeek, getStartOfWeek } from "@/lib/functions";
 import { redirect } from "next/navigation";
 
 
@@ -39,7 +39,7 @@ export function useHabits(user: User) {
 
 
     const refreshHabits =  async() => {
-        console.log("refreshing habit data. User is: ", user)
+        // console.log("refreshing habit data. User is: ", user)
         fetchCompletionHistory();
         fetchTodayHabits();
         fetchHabitsThisWeek();
@@ -50,19 +50,26 @@ export function useHabits(user: User) {
     // Rolling window of habits from past 7 days
     const fetchCompletionHistory= async() => {
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // const today = new Date();
+        // today.setHours(0, 0, 0, 0);
 
-        const tomorrow = new Date(today.getDate() + 1)
-        const lastWeek = new Date(today);
-        lastWeek.setDate(today.getDate() - 6);
+        // const tomorrow = new Date(today.getDate() + 1)
+        // const lastWeek = new Date(today);
+        // lastWeek.setDate(today.getDate() - 6);
 
+        const lastWeek = getLastWeek();
+
+        const now = new Date()
+        const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        const tomorrow = new Date(today);
+        tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
         const {data, error} = await supabase
             .from("habits")
             .select("due_date, is_complete")
             .eq("user_uid", user?.id)
             .gte("due_date", lastWeek.toISOString())
+            .lt("due_date", tomorrow.toISOString())
             .order("due_date", { ascending: true })
 
         if (error) {
@@ -79,12 +86,10 @@ export function useHabits(user: User) {
                 const day = dueDate.toLocaleString("en-US", {
                     weekday: "short"
                 })
-                const count = mapOfCounts.get(day)
-                if (!count && row.is_complete) {
-                    mapOfCounts.set(day, 1)
-                }
-                else if (count) {
-                    mapOfCounts.set(day, count + 1)
+
+                 if (row.is_complete) {
+                    const count = mapOfCounts.get(day) || 0;
+                    mapOfCounts.set(day, count + 1);
                 }
             })
 
@@ -99,7 +104,7 @@ export function useHabits(user: User) {
             });
 
             // Format the list in ascending order of days 
-            console.log("base week days: ", baseWeekDays)           
+            // console.log("base week days: ", baseWeekDays)           
             const listOfCounts = baseWeekDays.map(day => ({
                 day: day,
                 count: mapOfCounts.get(day) || 0,
