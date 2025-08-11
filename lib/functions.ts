@@ -102,12 +102,6 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
 
         const completedDate = new Date(habit.completed_date)
         const dueDate = new Date(habit.due_date)
-        // const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
-
-        // console.log(`----isHabitComplete(${habit.title})----`)
-        // console.log(`UTC completed date for habit ${habit.title} is: ${completedDate.toISOString()}`)
-        // console.log(`UTC due date for habit ${habit.title} is: ${dueDate.toISOString()}`)
-        // console.log('-----------------end----------------------')
     }
 
     if (!habit.completed_date) {
@@ -132,12 +126,6 @@ export function isHabitLate(habit: Habit) : boolean {
 
     // Strip the timezone metadata to compare with local time
     const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
-
-    // console.log("----------<")
-    // console.log(`Getting now date for ${habit.title}: ${now.toISOString()}`)
-    // console.log(`habit ${habit.title} raw due date:  ${habit.due_date}`)
-    // console.log(`dueDate for habit ${habit.title} is: ${dueDate}`)
-    // console.log(`----------<`)
     
     return !habit.is_complete && (now > dueDate);
 }
