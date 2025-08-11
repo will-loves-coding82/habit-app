@@ -306,7 +306,7 @@ export function useHabits(user: User) {
                 )
             );
 
-            let day = new Date(habit.due_date)
+            const day = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
             let dayOfWeek = day.toLocaleString("en-US", {
                 weekday: "long"
             })
