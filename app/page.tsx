@@ -56,7 +56,7 @@ export default function Home() {
               <p className="text-darkBlue">AI Chatbot</p>
               <h2 className="max-w-sm text-4xl font-semibold md:text-6xl">Your personal <br/> LLM <br/> assistant.</h2>
               <p className="text-muted-foreground max-w-sm mt-8">
-                Built with ChatGPT 4.0 mini to provide helpful insights about your habit data.
+                Built with ChatGPT 4.1 mini to provide helpful insights about your habit data.
               </p>
             </article>
 
