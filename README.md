@@ -1,5 +1,6 @@
- ![dashboard preview](/public/readme/hero.png)
+ ![hero preview](/public/readme/hero.png)
  ![dashboard preview](/public/readme/dashboard.png)
+ ![schema preview](/public/readme/schema.png)
 
 ## Features
 
@@ -8,7 +9,7 @@
 * Daily cron jobs that duplicate your habits each day and track your streaks
 * Essential statistics in a personal dashboard to track your progress
 * Chat GPT LLM Assistant via Edge Functions
-  * Built with 4.0 mini and AI Tooling to fetch user's data based on NLP queries
+  * Built with 4.1 mini and AI Tooling to fetch user's data based on natural language queries
 * Profile page with avatar photo customization
 
 ## Project Structure
