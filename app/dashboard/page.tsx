@@ -71,15 +71,20 @@ export default function DashboardPage() {
   } = useStreaks(user);
 
   const [addFormState, addFormAction] = useActionState(createHabitAction, {} as CreateHabitFormState);
+
+  // Client-side form state that is sent to the form action on the server side
+  // through the custom addFormAction
   const [addFormData, setAddFormData] = useState<{
     title: string,
     description: string,
     due_date: DateValue | null,
+    user_timezone: string,
     is_weekly: boolean
   }>({
     title: "",
     description: "",
     due_date: null,
+    user_timezone: "",
     is_weekly: false,
   });
 
@@ -318,6 +323,7 @@ export default function DashboardPage() {
       title: "",
       description: "",
       due_date: null,
+      user_timezone: "",
       is_weekly: false,
     });
   }
@@ -728,6 +734,14 @@ export default function DashboardPage() {
 
                   <Form action={addFormAction} onSubmit={() => { setIsAddingHabit(true) }} className="mt-[-12px]">
                     <div className="flex flex-col gap-4 w-full">
+
+                      <Input
+                        aria-label="user_timezone"
+                        type="hidden"
+                        name="user_timezone"
+                        value={Intl.DateTimeFormat().resolvedOptions().timeZone}
+                      />
+
                       <Input
                         aria-label="title"
                         id="title"

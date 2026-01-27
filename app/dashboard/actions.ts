@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { DateValue } from "@internationalized/date";
+import { toZoned, parseDateTime } from "@internationalized/date";
 
 export interface CreateHabitFormState {
 	error: string | null;
@@ -16,10 +16,22 @@ export interface CreateHabitFormState {
 export async function createHabitAction(previousState: CreateHabitFormState, formData: FormData): Promise<CreateHabitFormState> {
 	const supabase = await createClient();
 
+	// DatePicker component uses React Aria which doesn't come with timezone data by default. 
+	// Moreover, when this server action run in the Next.js production server, it uses
+	// UTC timezone. So we need to extract the client-side timezone data from the form data
+	// in order to store it correctly in postgres.
+	const dueDateStr = formData.get("due_date") as string;
+	const userTimezone = formData.get("user_timezone") as string;
+
+	// Parse and convert using the user's timezone
+	const localDateTime = parseDateTime(dueDateStr);
+	const zonedDateTime = toZoned(localDateTime, userTimezone);
+	const dueDate = zonedDateTime.toDate().toISOString();
+
 	const { error } = await supabase.from("habits").insert({
 		title: formData.get("title") as string,
 		description: formData.get("description") as string,
-		due_date: new Date(formData.get("due_date") as string).toISOString(),
+		due_date: dueDate,
 		recurrence_type: formData.get("is_weekly") === "true" ? "weekly" : "daily",
 		is_parent: true
 	})
