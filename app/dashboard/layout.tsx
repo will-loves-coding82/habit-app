@@ -1,7 +1,6 @@
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import Link from "next/link";
 import { DashboardAuthButton } from "@/components/dashboard-auth-button";
-import Providers from "./toast-provider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Menu } from "lucide-react";
-import ToastProvider from "./toast-provider";
 import HabitProvider from "../context/habit-context";
 import UserProvider from "../context/user-context";
 import ToastProviders from "./toast-provider";
@@ -22,11 +20,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
 
-
-  // const queryClient = new QueryClient();
-
   return (
-
     <main>
       <div className="flex-1 w-full flex flex-col items-center">
 
@@ -50,9 +44,9 @@ export default function ProtectedLayout({
                 <DropdownMenuItem>
                   <Link href={"/dashboard/profile"} className="text-sm">Profile</Link>
                 </DropdownMenuItem>
-                
+
                 <DropdownMenuItem>
-                  <DashboardAuthButton/>
+                  <DashboardAuthButton />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -66,7 +60,7 @@ export default function ProtectedLayout({
             </ToastProviders>
           </HabitProvider>
         </UserProvider>
-          
+
         <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
           <p>
             Powered by{" "}
@@ -84,7 +78,5 @@ export default function ProtectedLayout({
 
       </div>
     </main>
-
-
   );
 }

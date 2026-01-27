@@ -6,8 +6,8 @@ import { DatePicker } from "@heroui/date-picker";
 import { Input, Textarea } from "@heroui/input";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form } from "@heroui/form";
-import React, { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDate, CalendarDateTime, DateValue, getLocalTimeZone, now, today, ZonedDateTime } from "@internationalized/date";
+import React, { useActionState, useEffect, useRef, useState } from "react";
+import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { Avatar } from "@heroui/avatar";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
@@ -31,8 +31,7 @@ import { Button } from '@/components/ui/button';
 
 
 /**
- * 
- * Defines the interace to view and update a user's habits. Comes 
+ * DashboardPage defines the interace to view and update a user's habits. Comes 
  * with statistics such as total habits, streaks, completion history, 
  * and progress percentage. Users can also interact with a LLM 
  * chatbot on this page as well.
@@ -49,7 +48,6 @@ export default function DashboardPage() {
   const [selected, setSelected] = useState("Today");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
-
 
   const {
     isAddingHabit,
@@ -89,12 +87,12 @@ export default function DashboardPage() {
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<{
-        title: string | null,
-        description: string | null,
-    }>({
-        title: null,
-        description: null
-    });
+    title: string | null,
+    description: string | null,
+  }>({
+    title: null,
+    description: null
+  });
 
 
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -105,7 +103,13 @@ export default function DashboardPage() {
 
 
 
-  const handleChatSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  /**
+   * handleChatInputChange will trim the user's message and trigger
+   * a form action to submit the form data. A supabase edge function is invoked
+   * with this content and the response is saved locally in the component state
+   * for rendering in the UI.
+   */
+  const handleChatSubmitAndDisplayResponse = async (e: React.FormEvent<HTMLFormElement>) => {
 
     e.preventDefault();
 
@@ -123,6 +127,8 @@ export default function DashboardPage() {
       setChatMessages(prev => [...prev, userMessage])
       setChatInput("");
 
+      // Wait for response from LLM
+      // TODO: A loading status would be helpful to show the request is processing
       const { data, error } = await supabase.functions.invoke("generate-ai-answer", {
         body: JSON.stringify({
           userPrompt: chatInput,
@@ -151,11 +157,19 @@ export default function DashboardPage() {
     }
   }
 
+  /**
+  * handleChatInputChange will handle changes in the user's 
+  * message content when communicating to the LLM chatbot.
+  */
   const handleChatInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     setChatInput(value);
   };
 
+  /**
+   * handleDueDateChange will update the due date of a habit 
+   * when the user wants to create a new one.
+   */
   const handleDueDateChange = (value: DateValue | null) => {
     if (value == null) {
       return
@@ -166,6 +180,10 @@ export default function DashboardPage() {
     }));
   };
 
+  /**
+   * handleModalInputChange will update the appropriate field in the 
+   * html add form data with the user's input to help create a new habit,
+   */
   const handleModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setAddFormData((prevData) => ({
@@ -174,18 +192,23 @@ export default function DashboardPage() {
     }));
   };
 
+  /**
+   * handleEditModalInputChange will update the appropriate field in the 
+   * html edit form data with the user's input to help edit a habit.
+   */
   const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      setEditFormData((prevData) => ({
-          ...prevData,
-          [name]: value,
-      }));
+    const { name, value } = e.target;
+    setEditFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
   };
 
-
-
+  /**
+   * fetchChat will retrieve all of a user's and chatbot's messages
+   * for a particular chat id.
+   */
   async function fetchChat(): Promise<number | null> {
-
     const { data, error } = await supabase
       .from("chats")
       .select("id")
@@ -209,15 +232,19 @@ export default function DashboardPage() {
     return data?.id ?? null;
   }
 
-  const openChat = async () => {
-
+  /**
+  * openChat will open a chat and its messagges. If it doesn't exist,
+  * the method will provision a new chat for the user to begin
+  * convserations with the LLM chatbot.
+  */
+  const openOrCreateChat = async () => {
     if (chatMessages.length > 0 || chatId != null) {
       return;
     }
 
-    // check if user has a chat
     const chat = await fetchChat();
 
+    // Create a new chat if it doesn't exist already
     if (chat == null) {
       const { error } = await supabase.from("chats")
         .insert({
@@ -234,7 +261,8 @@ export default function DashboardPage() {
         });
       }
       else {
-        // TODO: Create an edge function that will return the created chat id to avoid refetching
+        // TODO: Create an edge function that will 
+        // return the created chat id to avoid refetching
         console.log("successfully created new chat")
         const chat = await fetchChat();
         setChatId(chat);
@@ -242,6 +270,7 @@ export default function DashboardPage() {
 
     } else {
 
+      // Otherwise, grab the data for the exisiting chat
       setChatId(chat);
 
       const { data, error } = await supabase
@@ -268,7 +297,7 @@ export default function DashboardPage() {
   }
 
 
-  const refreshData = () => {
+  const refreshHabitData = () => {
     clearForm();
     refreshHabits();
   }
@@ -283,10 +312,10 @@ export default function DashboardPage() {
   }
 
   const resetEditForm = () => {
-      setEditFormData({
-          title: selectedHabit?.title ?? null,
-          description: selectedHabit?.description ?? null
-      })
+    setEditFormData({
+      title: selectedHabit?.title ?? null,
+      description: selectedHabit?.description ?? null
+    })
   }
 
   const scrollToBottomOfChat = () => {
@@ -302,38 +331,38 @@ export default function DashboardPage() {
   }, [isChatOpen, chatMessages])
 
 
+  // Fetches the user's profile image from a supabase bucket
   useEffect(() => {
-        
-      async function downloadImage() {
-          try {
-              setDownloadingAvatar(true)
+    async function downloadImage() {
+      try {
+        setDownloadingAvatar(true);
 
-              const { data, error } = await supabase.storage
-                  .from('avatars')
-                  .download(`${user?.id}/profile.jpg`)
+        const { data, error } = await supabase.storage
+          .from('avatars')
+          .download(`${user?.id}/profile.jpg`)
 
-              if (error) {
-                  throw error
-              }
+        if (error) {
+          throw error;
+        }
 
-              const url = URL.createObjectURL(data)
-              setAvatarURL(url)
+        const url = URL.createObjectURL(data);
+        setAvatarURL(url);
 
-              console.log("avatar url: ", url)
+        console.log("avatar url: ", url);
 
-          } catch (error) {
-              console.log('Error downloading image: ', error)
-          }
-          finally {
-              setDownloadingAvatar(false)
-          }
+      } catch (error) {
+        console.log('Error downloading image: ', error);
       }
+      finally {
+        setDownloadingAvatar(false);
+      }
+    }
 
-      if (user) downloadImage()
+    if (user) downloadImage();
 
-    }, [user])
+  }, [user])
 
-  // Handle form submission results
+  // Displays form action results as toast messages
   useEffect(() => {
     setIsModalOpen(false);
 
@@ -345,7 +374,7 @@ export default function DashboardPage() {
           base: cn(["mb-4 mr-4"])
         }
       });
-      refreshData();
+      refreshHabitData();
     }
     if (!addFormState.success && addFormState.error) {
       addToast({
@@ -361,76 +390,77 @@ export default function DashboardPage() {
   }, [addFormState])
 
 
+  /**
+   * calculateProgressForToday keeps track of the proportion of completed habits 
+   * to the total habits for the current day.
+  */
   function calculateProgressForToday(): number {
-
     if (!todayHabits || todayHabits?.length == 0) {
-      return 0
+      return 0;
     }
 
     let numCompeleted = todayHabits.filter((habit: Habit) => {
       return habit.is_complete
     }).length
 
-    return Math.ceil((numCompeleted / todayHabits.length) * 100)
+    return Math.ceil((numCompeleted / todayHabits.length) * 100);
   }
-
 
   return (
     <>
-
-    <Modal 
-      isOpen={isEditModalOpen} 
-      onClose={() => {
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
           setIsEditModalOpen(false)
           resetEditForm()
-      }} 
-      className="bg-accent" radius="sm" isDismissable={false}>
-          <ModalContent>
-              <ModalHeader>Update Habit Details</ModalHeader>
-              <ModalBody className="flex flex-col gap-8 mt-[-24px]">
-                  <p className="text-muted-foreground text-sm">
-                      Once your changes are saved, it might take a few minutes to see the changes.
-                  </p>
-                  <Form className="mt-[-12px]">
-                      <div className="flex flex-col gap-4 w-full">
-                          <Input
-                          aria-label="title"
-                          label="Title"
-                          id="title"
-                          name="title"
-                          type="text"
-                          placeholder="Enter a title"
-                          variant="bordered"
-                          radius="sm"
-                          required
-                          onChange={handleEditModalInputChange}
-                          value={editFormData.title ?? selectedHabit?.title}
-                          />
-  
-                          <Textarea
-                          aria-label="description"
-                          label="Description"
-                          id="description"
-                          name="description"
-                          type="text"
-                          placeholder="Description"
-                          variant="bordered"
-                          radius="sm"
-                          required
-                          onChange={handleEditModalInputChange}
-                          value={editFormData.description ?? selectedHabit?.description}
-                          />
-                      </div>
-                  </Form>
+        }}
+        className="bg-accent" radius="sm" isDismissable={false}>
+        <ModalContent>
+          <ModalHeader>Update Habit Details</ModalHeader>
+          <ModalBody className="flex flex-col gap-8 mt-[-24px]">
+            <p className="text-muted-foreground text-sm">
+              Once your changes are saved, it might take a few minutes to see the changes.
+            </p>
+            <Form className="mt-[-12px]">
+              <div className="flex flex-col gap-4 w-full">
+                <Input
+                  aria-label="title"
+                  label="Title"
+                  id="title"
+                  name="title"
+                  type="text"
+                  placeholder="Enter a title"
+                  variant="bordered"
+                  radius="sm"
+                  required
+                  onChange={handleEditModalInputChange}
+                  value={editFormData.title ?? selectedHabit?.title}
+                />
 
-                  <div className="flex justify-end w-full mb-4">
-                      <Button type="submit" size="sm" className="ml-2" onClick={() => onUpdateHabit(selectedHabit, editFormData.title, editFormData.description)}>
-                          {isUpdatingHabit ? "Updating..." : "Submit"}
-                      </Button>
-                  </div>
-                  
-              </ModalBody>
-          </ModalContent>
+                <Textarea
+                  aria-label="description"
+                  label="Description"
+                  id="description"
+                  name="description"
+                  type="text"
+                  placeholder="Description"
+                  variant="bordered"
+                  radius="sm"
+                  required
+                  onChange={handleEditModalInputChange}
+                  value={editFormData.description ?? selectedHabit?.description}
+                />
+              </div>
+            </Form>
+
+            <div className="flex justify-end w-full mb-4">
+              <Button type="submit" size="sm" className="ml-2" onClick={() => onUpdateHabit(selectedHabit, editFormData.title, editFormData.description)}>
+                {isUpdatingHabit ? "Updating..." : "Submit"}
+              </Button>
+            </div>
+
+          </ModalBody>
+        </ModalContent>
       </Modal>
 
       {
@@ -477,7 +507,7 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground text-sm">Past 7 days</p>
                   </article>
 
-                  <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits}/>               
+                  <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits} />
                 </div>
 
                 <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
@@ -540,7 +570,7 @@ export default function DashboardPage() {
 
             <DrawerFooter>
               <Form
-                onSubmit={(e) => { handleChatSubmit(e) }}
+                onSubmit={(e) => { handleChatSubmitAndDisplayResponse(e) }}
                 className="flex flex-row items-center w-screen gap-4">
                 <Input
                   aria-label="search"
@@ -569,8 +599,8 @@ export default function DashboardPage() {
 
         <div className="w-full max-w-7xl flex justify-between bg-background items-center p-2 px-5 text-sm">
           <span className="flex gap-2 items-center">
-            { avatarURL && <Avatar src={avatarURL} size="lg" className="w-6 h-6" classNames={{ icon: "text-primary w-16 h-16", base: "bg-accent mx-auto" }} /> }
-            { !avatarURL && <Avatar  size="sm" className="w-6 h-6" classNames={{ icon: "text-primary w-4 h-4", base: "bg-accent mx-auto" }} /> }
+            {avatarURL && <Avatar src={avatarURL} size="lg" className="w-6 h-6" classNames={{ icon: "text-primary w-16 h-16", base: "bg-accent mx-auto" }} />}
+            {!avatarURL && <Avatar size="sm" className="w-6 h-6" classNames={{ icon: "text-primary w-4 h-4", base: "bg-accent mx-auto" }} />}
 
             {isLoadingUser ?
               <Skeleton className="rounded-lg w-24">
@@ -583,10 +613,10 @@ export default function DashboardPage() {
 
           <span className="flex items-center gap-8">
 
-            <BarChart className={`hover:cursor-pointer sm:hidden  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick = {async () => setIsStatsOpen(true)} />
+            <BarChart className={`hover:cursor-pointer sm:hidden  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick={async () => setIsStatsOpen(true)} />
             <BotMessageSquare className={`hover:cursor-pointer  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick={async () => {
               if (user) {
-                await openChat()
+                await openOrCreateChat()
                 setIsChatOpen(!isChatOpen);
               }
             }}
@@ -632,7 +662,7 @@ export default function DashboardPage() {
                   <p className="text-muted-foreground text-sm">Past 7 days</p>
                 </article>
 
-                <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits}/>
+                <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits} />
               </div>
 
               <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
@@ -641,7 +671,7 @@ export default function DashboardPage() {
 
                   <Link href={"/dashboard/profile"} className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">
                     manage
-                  </Link>                
+                  </Link>
                 </span>
                 <p className="font-semibold text-6xl mt-4">{uniqueHabits.length}</p>
               </div>
@@ -760,14 +790,14 @@ export default function DashboardPage() {
             {selected === "Today" ?
               <ul className="flex flex-col gap-4 mt-8">
                 {todayHabits?.map((habit: Habit) =>
-                  <HabitCard 
-                    key={habit.id} 
-                    habit={habit} 
-                    type="today" 
-                    isDeleting={isDeletingHabit} 
-                    isUpdating={isUpdatingHabit} 
-                    onUpdate={onUpdateHabit}  
-                    onComplete={onCompleteHabit} 
+                  <HabitCard
+                    key={habit.id}
+                    habit={habit}
+                    type="today"
+                    isDeleting={isDeletingHabit}
+                    isUpdating={isUpdatingHabit}
+                    onUpdate={onUpdateHabit}
+                    onComplete={onCompleteHabit}
                     onDelete={onDeleteHabit} />
                 )}
               </ul>
@@ -787,14 +817,14 @@ export default function DashboardPage() {
                     </span>
                     <section className="flex flex-col gap-4 mt-4">
                       {habits?.map((habit: Habit) => (
-                        <HabitCard 
-                          key={habit.id} 
-                          habit={habit}  
-                          type="this_week" 
-                          isDeleting={isDeletingHabit} 
-                          isUpdating={isUpdatingHabit} 
-                          onUpdate={onUpdateHabit} 
-                          onComplete={onCompleteHabit} 
+                        <HabitCard
+                          key={habit.id}
+                          habit={habit}
+                          type="this_week"
+                          isDeleting={isDeletingHabit}
+                          isUpdating={isUpdatingHabit}
+                          onUpdate={onUpdateHabit}
+                          onComplete={onCompleteHabit}
                           onDelete={onDeleteHabit} />
                       ))}
                     </section>

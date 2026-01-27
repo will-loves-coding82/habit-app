@@ -7,16 +7,14 @@ export default function ToastProviders({children}: {
   children: React.ReactNode;
 }) {
 
-    const queryClient = new QueryClient();
+  const queryClient = new QueryClient();
 
   return (
     <QueryClientProvider client={queryClient}>
-
-    <HeroUIProvider className="min-h-screen w-full flex flex-col items-center">
-      <ToastProvider />
-      {children}
-    </HeroUIProvider>
+      <HeroUIProvider className="min-h-screen w-full flex flex-col items-center">
+        <ToastProvider />
+        {children}
+      </HeroUIProvider>
    </QueryClientProvider >
-
-  )
+  );
 }

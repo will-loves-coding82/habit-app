@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Geist, League_Spartan } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
-import UserProvider from "./context/user-context";
-import HabitProvider from "./context/habit-context";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -41,14 +39,14 @@ export default function RootLayout({
       </head>
 
       <body className={`${leagueSpartan.className} antialiased`}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-              {children}
-          </ThemeProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

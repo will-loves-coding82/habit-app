@@ -1,4 +1,4 @@
-
+// Deprecated experiment with TanStackQuery
 
 // export function useHabits(user: User | null, queryClient: QueryClient) {
 

@@ -6,25 +6,15 @@ const client = new OpenAI({
   apiKey: process.env.OPEN_AI_KEY,
 });
 
-
+// Deprecated POST endpoint used to create embeddings of user messagess
 export async function POST(req: Request) {
-
-  // const isAuth = (await cookies()).get("sb-127-auth-token");
-
-  // if (!isAuth) {
-  //   return NextResponse.json({
-  //     error: "Unauthorized",
-  //   }, { status: 403 });
-  // }
-
-
   const request = await req.json();
 
   if (!req?.text) {
     return NextResponse.json(
       {
         error: "No input provided",
-      }, 
+      },
       { status: 400 }
     );
   }
@@ -44,8 +34,8 @@ export async function POST(req: Request) {
       {
         embedding: embedding,
         token: token
-      }, 
-      { status: 200}
+      },
+      { status: 200 }
     );
   }
 
@@ -54,7 +44,7 @@ export async function POST(req: Request) {
       {
         error: "Failed to create embedding",
         details: error instanceof Error ? error.message : "Unknown error",
-      }, 
+      },
       { status: 500 }
     );
   }

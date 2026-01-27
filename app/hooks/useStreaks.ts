@@ -4,68 +4,61 @@ import { useEffect, useState } from "react";
 
 
 /**
- * Reusable custom hook that manages streak logic.
+ * useStreaks is a reusable custom hook that manages streak data.
  */
 export function useStreaks(user: User | null) {
+	const supabase = createClient();
+	const [streak, setStreak] = useState(0);
+	const [hasStreak, setHasStreak] = useState(true);
 
-    const supabase = createClient();
-    const [streak, setStreak] = useState(0);
-    const [hasStreak, setHasStreak] = useState(true);
+	useEffect(() => {
+		if (user) {
+			fetchStreak();
+		}
+	}, [user])
 
+	/**
+	* fetchStreak retrieves the user's current streak.
+	*/
+	const fetchStreak = async () => {
+		const { data, error } = await supabase
+			.from("streaks")
+			.select("streak")
+			.eq("user_uid", user!!.id)
+			.limit(1)
 
-    useEffect(() =>{
-        if (user) {
-            fetchStreak();
-        }
-    }, [user])
+		if (error) {
+			console.log("Error getting streaks: ", error)
+			setHasStreak(false);
+		}
 
-     /**
-     * Fetches the user's current streak.
-     */
-    const fetchStreak = async () => {
+		if (data && data.length > 0) {
+			setStreak(data[0].streak);
+			setHasStreak(true);
+		}
+		else {
+			console.log("Streak for user doesnt exist in DB")
+			setHasStreak(false);
+		}
+	}
 
-        const { data, error } = await supabase
-            .from("streaks")
-            .select("streak")
-            .eq("user_uid", user!!.id)
-            .limit(1)
+	/**
+	* initializeStreak initializes a streak to 0 for a user. This is helpful when a user is 
+	* provisioned but their streak wasn't properly created in the beginning.
+	*/
+	const initializeStreak = async () => {
+		const supabase = await createClient();
+		const { error } = await supabase
+			.from("streaks")
+			.insert({ streak: 0, user_uid: user!!.id })
 
-        if (error) {
-            console.log("Error getting streaks: ", error)
-            setHasStreak(false);
-        }
+		if (error) {
+			console.log("error initializing streak: ", error);
+		}
+		else {
+			await fetchStreak();
+		}
+	}
 
-        if (data && data.length > 0) {
-            setStreak(data[0].streak);
-            setHasStreak(true);
-        }
-        else {
-            console.log("Streak for user doesnt exist in DB")
-            setHasStreak(false);
-        }
-    }
-
-     /**
-     * Initializes a streak to 0 for a user. This is helpful when a user is 
-     * provisioned but their streak wasn't properly created in the beginning.
-     */
-    const initializeStreak = async () => {
-        const supabase = await createClient();
-        const { error } = await supabase
-            .from("streaks")
-            .insert({ streak: 0, user_uid: user!!.id })
-
-        if (error) {
-            console.log("error initializing streak: ", error);
-        }
-        else {
-            await fetchStreak()
-        }
-    }
-
-
-    return { streak, hasStreak, setStreak, setHasStreak, fetchStreak, initializeStreak }
-
-
-
+	return { streak, hasStreak, setStreak, setHasStreak, fetchStreak, initializeStreak };
 }

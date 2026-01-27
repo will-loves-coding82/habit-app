@@ -16,11 +16,10 @@ export type Habit = {
 
 export type CompletionCountPerDay = {
     due_date: string;
-    count_complete: number
+    count_complete: number;
 }
 
-export type CompletionHistory = Array<{day: string, count: number}>
-
+export type CompletionHistory = Array<{ day: string, count: number }>
 
 export type Streak = {
     created_date: string;
@@ -29,30 +28,25 @@ export type Streak = {
     streak: number;
 }
 
-
 export type habitAction = {
     type: string;
     habit: Habit;
 }
 
-
 export type ChatMessage = {
-    created_at: string,
-    role: string,
-    content: string,
-    chat_id: number,
+    created_at: string;
+    role: string;
+    content: string;
+    chat_id: number;
 }
-
 
 export type Error = {
-    message: string
+    message: string;
 }
 
-
-
 export interface UserContextProps {
-    user: User,
-    isLoadingUser: boolean
+    user: User;
+    isLoadingUser: boolean;
 }
 
 
@@ -61,30 +55,30 @@ export interface HabitContextProps {
     isDeletingHabit: boolean,
     isUpdatingHabit: boolean,
     isLoadingUniqueHabits: boolean,
-    todayHabits: Habit[],
-    weekHabits:  Map<string, Habit[]>,
-    uniqueHabits: Habit[],
-    completionHistory: CompletionHistory,
-    refreshHabits: () => void,
-    setTodayHabits: Dispatch<SetStateAction<Habit[]>>,
-    setWeekHabits: Dispatch<SetStateAction<Map<string, Habit[]>>>,
-    setIsAddingHabit: Dispatch<SetStateAction<boolean>>,
-    setIsDeletingHabit: Dispatch<SetStateAction<boolean>>,
-    fetchUniqueHabits: () => Promise<void>,
-    fetchHabitsThisWeek:  () => Promise<void>,
-    fetchTodayHabits:  () => Promise<void>,
-    onCompleteHabit:  (habit: Habit, completed: boolean) => void,
-    onUpdateHabit: (habit: Habit | null, new_title: string | null, new_description: string | null) => Promise<void>,
-    onDeleteHabit: (habit: Habit) => Promise<void>,
-    onDeleteUniqueHabit: (habit: Habit) => Promise<void>
+    todayHabits: Habit[];
+    weekHabits: Map<string, Habit[]>;
+    uniqueHabits: Habit[];
+    completionHistory: CompletionHistory;
+    refreshHabits: () => void;
+    setTodayHabits: Dispatch<SetStateAction<Habit[]>>;
+    setWeekHabits: Dispatch<SetStateAction<Map<string, Habit[]>>>;
+    setIsAddingHabit: Dispatch<SetStateAction<boolean>>;
+    setIsDeletingHabit: Dispatch<SetStateAction<boolean>>;
+    fetchUniqueHabits: () => Promise<void>;
+    fetchHabitsThisWeek: () => Promise<void>;
+    fetchTodayHabits: () => Promise<void>;
+    onCompleteHabit: (habit: Habit, completed: boolean) => void;
+    onUpdateHabit: (habit: Habit | null, new_title: string | null, new_description: string | null) => Promise<void>;
+    onDeleteHabit: (habit: Habit) => Promise<void>;
+    onDeleteUniqueHabit: (habit: Habit) => Promise<void>;
 }
 
 export type HabitCardProps = {
-    habit: Habit, 
-    type: string, 
-    isDeleting: boolean, 
-    isUpdating: boolean,
-    onComplete: (habit: Habit, completed: boolean) => void, 
-    onDelete: (habit: Habit) => void,
-    onUpdate: (habit: Habit | null, new_title: string | null, new_description: string | null) => Promise<void>
+    habit: Habit;
+    type: string;
+    isDeleting: boolean;
+    isUpdating: boolean;
+    onComplete: (habit: Habit, completed: boolean) => void;
+    onDelete: (habit: Habit) => void;
+    onUpdate: (habit: Habit | null, new_title: string | null, new_description: string | null) => Promise<void>;
 }

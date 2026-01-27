@@ -3,13 +3,11 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 
 export function Hero() {
-
   const theme = useTheme();
   return (
-
     <section className="px-5 w-full max-w-5xl p-8 mx-auto mt-12 md:h-[75vh] rounded-lg lg:px-0 text-center">
       <Image
-        src={ theme.resolvedTheme == "dark" ? "/chips-dark.png" : "/chips-light.png"}
+        src={theme.resolvedTheme == "dark" ? "/chips-dark.png" : "/chips-light.png"}
         alt="timeline image"
         objectFit="contain"
         width={800}
@@ -21,7 +19,5 @@ export function Hero() {
         Stay motivated and organized with a personal LLM assistant to track and crush your goals.
       </p>
     </section>
-
-
   );
 }
