@@ -19,7 +19,7 @@ export async function createHabitAction(previousState: CreateHabitFormState, for
 	const { error } = await supabase.from("habits").insert({
 		title: formData.get("title") as string,
 		description: formData.get("description") as string,
-		due_date: new Date(formData.get("due_date") as string).toISOString(), //todo: store in utc time
+		due_date: new Date(formData.get("due_date") as string).toISOString(),
 		recurrence_type: formData.get("is_weekly") === "true" ? "weekly" : "daily",
 		is_parent: true
 	})

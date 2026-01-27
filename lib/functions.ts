@@ -2,16 +2,15 @@ import { Habit } from "@/app/types";
 
 
 /**
- * Determines the start of the current week
+ * Determines the start of the current week in UTC time.
  * @returns A Date object
  */
-export function getStartOfWeek() : Date {
-    
+export function getStartOfWeek(): Date {
     const date = new Date()
     const day = date.getDay()
 
-    if ( day !== 0) {
-        date.setHours(0,0,0,0)
+    if (day !== 0) {
+        date.setHours(0, 0, 0, 0)
         date.setDate(date.getDate() - day);
     }
 
@@ -21,16 +20,15 @@ export function getStartOfWeek() : Date {
 
 
 /**
- * Determines the end of the current week
+ * Determines the end date of the current week in UTC time.
  * @returns A Date object
  */
-export function getEndOfWeek() : Date {
-
+export function getEndOfWeek(): Date {
     const date = new Date()
     const day = date.getDay()
-    if ( day < 7) {
-        date.setHours(23,59,0,0)
-        date.setDate(date.getDate() + (7-day));
+    if (day < 7) {
+        date.setHours(23, 59, 0, 0)
+        date.setDate(date.getDate() + (7 - day));
     }
 
     const end = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours(), date.getMinutes()));
@@ -38,16 +36,16 @@ export function getEndOfWeek() : Date {
 }
 
 /**
- * Determines the date from last week
+ * Determines the date from 7 days ago in UTC time.
  * @returns A Date object
  */
-export function getLastWeek() : Date {
+export function getLastWeek(): Date {
 
     const date = new Date()
     const day = date.getDay()
 
-    if ( day !== 0) {
-        date.setHours(0,0,0,0)
+    if (day !== 0) {
+        date.setHours(0, 0, 0, 0)
         date.setDate(date.getDate() - 6);
     }
 
@@ -59,31 +57,31 @@ export function getLastWeek() : Date {
 
 
 /**
- * Returns a rolling window of the past 7 days as strings
+ * Returns a rolling window of the past 7 days as local date strings.
  * e.g. ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
  * @returns An array of strings
  */
-export function calculateBaseWeekDays() : string[] {
+export function calculateBaseWeekDays(): string[] {
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-        const lastWeek = new Date(today);
-        lastWeek.setDate(today.getDate() - 6);
+    const lastWeek = new Date(today);
+    lastWeek.setDate(today.getDate() - 6);
 
-        let list = []
+    let list = []
 
-        for (let i = 0; i < 7; i++) {
-            let lastWeekName = lastWeek.toLocaleString("en-US", {
-                weekday: "short"
-            })
+    for (let i = 0; i < 7; i++) {
+        let lastWeekName = lastWeek.toLocaleString("en-US", {
+            weekday: "short"
+        })
 
-            list.push(lastWeekName)
-            lastWeek.setDate(lastWeek.getDate() + 1)
-        }
-
-        return list
+        list.push(lastWeekName)
+        lastWeek.setDate(lastWeek.getDate() + 1)
     }
+
+    return list
+}
 
 
 /**
@@ -92,25 +90,13 @@ export function calculateBaseWeekDays() : string[] {
  * @param habit Represents a user's habit
  * @returns true or false
  */
-export function isHabitCompletedOnTime(habit: Habit) : boolean {
-
-    if (!habit.completed_date) {
-        return false
-    }
-
-    if (habit.is_complete) {
-
-        const completedDate = new Date(habit.completed_date)
-        const dueDate = new Date(habit.due_date)
-    }
+export function isHabitCompletedOnTime(habit: Habit): boolean {
 
     if (!habit.completed_date) {
         return false;
     }
-    if (habit.completed_date < habit.due_date) {
-        return true;
-    }
-    return false
+
+    return habit.is_complete && (habit.completed_date < habit.due_date)
 }
 
 /**
@@ -120,14 +106,14 @@ export function isHabitCompletedOnTime(habit: Habit) : boolean {
  * @param habit Represents a user's habit
  * @returns true or false
  */
-export function isHabitLate(habit: Habit) : boolean {
+export function isHabitLate(habit: Habit): boolean {
 
-    const now = new Date()    
+    const now = new Date().toISOString();
 
     // Strip the timezone metadata to compare with local time
-    const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
-    
+    // const dueDate = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
+    const dueDate = new Date(habit.due_date).toISOString();
+
     return !habit.is_complete && (now > dueDate);
 }
-
 

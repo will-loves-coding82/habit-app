@@ -168,7 +168,6 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
 									hour: "numeric",
 									minute: "2-digit",
 									hour12: true,
-									timeZone: "UTC"
 								}).replace("at", "")}
 							</p>
 

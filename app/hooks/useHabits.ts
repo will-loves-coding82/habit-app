@@ -48,11 +48,9 @@ export function useHabits(user: User) {
 	 * many were completed for each day.
 	 */
 	const fetchCompletionHistory = async () => {
-
 		const lastWeek = getLastWeek();
-
 		const now = new Date()
-		const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
 		const tomorrow = new Date(today);
 		tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
@@ -67,16 +65,21 @@ export function useHabits(user: User) {
 
 		if (error) {
 			console.log("error getting habits over past week: ", error)
+			addToast({
+				title: "Error fetching this week's habits",
+				description: error.message,
+				color: "danger",
+				classNames: {
+					base: cn(["mb-4 mr-4"])
+				}
+			});
 		}
 
 		else {
-			console.log("raw completion data: ", data)
-
 			const mapOfCounts = new Map<string, number>();
 
-			// Iterate through each 
 			data.forEach(row => {
-				const dueDate = new Date(row.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
+				const dueDate = new Date(row.due_date);
 				const day = dueDate.toLocaleString("en-US", {
 					weekday: "short"
 				})
@@ -86,7 +89,6 @@ export function useHabits(user: User) {
 					mapOfCounts.set(day, count + 1);
 				}
 			})
-
 
 			// Add placeholder values for missing days
 			const baseWeekDays = calculateBaseWeekDays();
@@ -103,11 +105,9 @@ export function useHabits(user: User) {
 				count: mapOfCounts.get(day) || 0,
 			}));
 
-			console.log("completion history: ", listOfCounts)
 			setCompletionHistory(listOfCounts)
 		}
 	}
-
 
 	/**
 	 * Fetches all the habits that the user created.
@@ -126,12 +126,10 @@ export function useHabits(user: User) {
 			console.log("Error fetching all unique habits: ", error)
 		}
 		else {
-			console.log("unique habits: ", data)
 			setUniqueHabits(data)
 		}
 
 		setIsLoadingUniqueHabits(false)
-
 	}, [user])
 
 
@@ -142,7 +140,7 @@ export function useHabits(user: User) {
 
 		// Convert to UTC dates to match Supabase date types
 		const now = new Date()
-		const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 		const tomorrow = new Date(today);
 		tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
@@ -156,17 +154,15 @@ export function useHabits(user: User) {
 
 		if (error) {
 			addToast({
-				title: "Error",
-				description: "An error occurred while fetching today's habits.",
+				title: "Error fetching today's habits",
+				description: error.message,
 				color: "danger",
 				classNames: {
 					base: cn(["mb-4 mr-4"])
 				}
 			});
 		}
-
 		else {
-			console.log("Today habits: ", data)
 			setTodayHabits(data);
 		}
 	}, [user])
@@ -176,11 +172,8 @@ export function useHabits(user: User) {
 	 * Fetches habits that fall between the monday and sunday of this week.
 	 */
 	const fetchHabitsThisWeek = useCallback(async () => {
-
 		const weekStart = getStartOfWeek().toISOString();
 		const weekEnd = getEndOfWeek().toISOString();
-
-		console.log(`fetching this week habits. Start: ${weekStart}\n End: ${weekEnd}`)
 
 		const { data, error } = await supabase
 			.from("habits")
@@ -192,8 +185,8 @@ export function useHabits(user: User) {
 
 		if (error) {
 			addToast({
-				title: "Error",
-				description: "An error occurred while updating this week's habit.",
+				title: "Error updating this week's habit",
+				description: error.message,
 				color: "danger",
 				classNames: {
 					base: cn(["mb-4 mr-4"])
@@ -202,15 +195,12 @@ export function useHabits(user: User) {
 		}
 
 		else {
-			console.log("habits this week: ", data)
 			let habitsMap = new Map();
 
 			// Organize habits by days in the week
 			data.forEach((habit: Habit) => {
-				// let date = new Date(habit.due_date);
-				const date = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
-
-				let day = date.toLocaleString("en-US", {
+				const date = new Date(habit.due_date);
+				const day = date.toLocaleString("en-US", {
 					weekday: "long",
 				});
 
@@ -226,7 +216,7 @@ export function useHabits(user: User) {
 
 
 	/**
-	 * Callback function that updates a habit's completion status
+	 * Callback function that updates a habit's title and descriptioon.
 	 * @params habit The habit object
 	 * @params new_title The new title to update
 	 * @params new_description The new description to update
@@ -248,8 +238,8 @@ export function useHabits(user: User) {
 		if (error) {
 			console.log("Error updating habit")
 			addToast({
-				title: "Error",
-				description: "An error occurred while updating your habit.",
+				title: "Error updating your habit",
+				description: error.message,
 				color: "danger",
 				classNames: {
 					base: cn(["mb-4 mr-4"])
@@ -272,47 +262,40 @@ export function useHabits(user: User) {
 
 
 	/**
-	 * Callback function that updates a habit's title and description. 
-	 * @params is_complete A Boolean value
+	 * Callback function that updates a habit's completed_date. 
 	 */
 	const onCompleteHabit = useCallback(async (habit: Habit, is_complete: boolean) => {
 
-		const todayNumber = Number(new Date(0, 0, 0, 0).getDay())
-		const now = new Date();
-		const localUTC = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-		const localISO = localUTC.toISOString()
-
-		if (is_complete) {
-			console.log(`setting habit ${habit.title} completed date to: ${localUTC.toISOString()}`)
-		}
+		const todayUTC = new Date().toISOString()
 		const { error } = await supabase
 			.from("habits")
-			.update({ is_complete: is_complete, completed_date: is_complete ? localISO : null })
+			.update({ is_complete: is_complete, completed_date: is_complete ? todayUTC : null })
 			.eq("id", habit.id.toString())
 
 		if (!error) {
+			const day = new Date(habit.due_date);
+			let dayOfWeek = day.toLocaleString("en-US", {
+				weekday: "long"
+			})
 
 			// Update the completion history graph for today
+			const todayNumber = Number(new Date(0, 0, 0, 0).getDay())
 			setCompletionHistory(prev => {
 				return prev.map((item, index) =>
 					index === (6 - todayNumber) ? { ...item, count: (is_complete ? item.count + 1 : (item.count >= 1 ? item.count - 1 : 0)) } : item
 				);
 			});
 
+			// Update the completed date of the habit in the UI. 
+			// No need to do a whole page refresh
 			setTodayHabits((prev) =>
 				prev?.map((h) =>
-					h.id === habit.id ? { ...habit, is_complete: is_complete, completed_date: localISO } : h
+					h.id === habit.id ? { ...habit, is_complete: is_complete, completed_date: todayUTC } : h
 				)
 			);
-
-			const day = new Date(habit.due_date.replace(/([+-]\d{2}:\d{2}|Z)$/, ''));
-			let dayOfWeek = day.toLocaleString("en-US", {
-				weekday: "long"
-			})
-
 			setWeekHabits((prev) => {
 				if (prev.has(dayOfWeek)) {
-					const filtered = prev.get(dayOfWeek)!.map((h) => h.id === habit.id ? { ...habit, is_complete: is_complete, completed_date: localISO } : h)
+					const filtered = prev.get(dayOfWeek)!.map((h) => h.id === habit.id ? { ...habit, is_complete: is_complete, completed_date: todayUTC } : h)
 					prev.set(dayOfWeek, filtered);
 				}
 				return prev;
@@ -327,13 +310,11 @@ export function useHabits(user: User) {
 					}
 				});
 			}
-
-
 		} else {
 			console.log("Error: ", error)
 			addToast({
-				title: "Error",
-				description: "An error occurred while updating your habit.",
+				title: "Error completing your habit",
+				description: error.message,
 				color: "danger",
 				classNames: {
 					base: cn(["mb-4 mr-4"])
@@ -354,15 +335,14 @@ export function useHabits(user: User) {
 		const { error } = await supabase.rpc("delete_habit", { parent: habit.id })
 		if (error) {
 			addToast({
-				title: "Error",
-				description: "An error occurred while deleting your habit.",
+				title: "Error deleting your habit",
+				description: error.message,
 				color: "danger",
 				classNames: {
 					base: cn(["mb-4 mr-4"])
 				}
 			});
 		}
-
 		else {
 			refreshHabits();
 
@@ -376,13 +356,12 @@ export function useHabits(user: User) {
 		}
 
 		setIsDeletingHabit(false);
-
 	}, [user])
 
 
 	/**
 	* Callback function that deletes a habit by deleting its parent habit to 
-	* perform a CASCADE delete.
+	* perform a CASCADE delete on all children that reference it.
 	* 
 	* @params habit The habit to delete
 	*/
@@ -395,7 +374,7 @@ export function useHabits(user: User) {
 
 		if (error) {
 			addToast({
-				title: "Error",
+				title: "Error d",
 				description: "An error occurred while deleting your habit.",
 				color: "danger",
 				classNames: {
@@ -403,11 +382,8 @@ export function useHabits(user: User) {
 				}
 			});
 		}
-
 		else {
-
 			refreshHabits();
-
 			addToast({
 				title: "Habit Deleted",
 				description: "Successfully deleted habit!",
@@ -419,7 +395,6 @@ export function useHabits(user: User) {
 
 		setIsDeletingHabit(false);
 	}, [user]);
-
 
 	return {
 		isAddingHabit,

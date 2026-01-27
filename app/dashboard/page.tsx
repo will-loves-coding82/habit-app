@@ -113,7 +113,7 @@ export default function DashboardPage() {
 
     e.preventDefault();
 
-    if (chatInput && chatInput.trim() !== "") {
+    if (chatInput.length > 0) {
 
       const trimmedInput = chatInput.trim();
       const userMessage: ChatMessage = {
@@ -123,25 +123,37 @@ export default function DashboardPage() {
         chat_id: chatId!!,
       }
 
-
       setChatMessages(prev => [...prev, userMessage])
       setChatInput("");
 
       // Wait for response from LLM
       // TODO: A loading status would be helpful to show the request is processing
+      const now = new Date()
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrow = new Date(today);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
       const { data, error } = await supabase.functions.invoke("generate-ai-answer", {
         body: JSON.stringify({
           userPrompt: chatInput,
           chatId: chatId,
           userId: user.id,
+          todayDate: today.toISOString(),
+          tomorrowDate: tomorrow.toISOString(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         }),
         method: 'POST'
       });
 
-
-      if (error) {
-        console.log("Error generating ai response: ", error)
+      if (error != null) {
+        addToast({
+          title: "Error generating AI response",
+          description: error,
+          color: "danger",
+          classNames: {
+            base: cn(["mb-4 mr-4"])
+          }
+        });
       }
       else {
         const aiMessage: ChatMessage = {
@@ -151,7 +163,6 @@ export default function DashboardPage() {
           chat_id: chatId!!,
         };
 
-        console.log(data.body.finalResponse)
         setChatMessages(prev => [...prev, aiMessage])
       }
     }
@@ -342,16 +353,15 @@ export default function DashboardPage() {
           .download(`${user?.id}/profile.jpg`)
 
         if (error) {
-          throw error;
+          console.log('Error downloading avatar image: ', error);
+          return;
         }
 
         const url = URL.createObjectURL(data);
         setAvatarURL(url);
 
-        console.log("avatar url: ", url);
-
-      } catch (error) {
-        console.log('Error downloading image: ', error);
+      } catch (error: any) {
+        console.log('Error downloading avatar image: ', error);
       }
       finally {
         setDownloadingAvatar(false);

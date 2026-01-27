@@ -26,7 +26,6 @@ export default function UserProvider({ children }: { children: React.ReactNode }
 			if (error) { throw error }
 			else {
 				setUser(data.user);
-				console.log("setting user:", data.user);
 			}
 		}
 		catch (error) {
