@@ -75,7 +75,6 @@ export default function ProtectedLayout({
           </p>
           <ThemeSwitcher />
         </footer>
-
       </div>
     </main>
   );

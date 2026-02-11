@@ -1,17 +1,19 @@
-import type { Metadata } from "next";
+"use client";
+
 import { Geist, League_Spartan } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
+
+import {
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
+
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Stacked AI Habit Tracker",
-  description: "The easiest way to create and manage your habits, with a personal LLM assisstant.",
-};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,6 +27,10 @@ const leagueSpartan = League_Spartan({
   display: "swap",
   subsets: ["latin"],
 });
+
+// Create a client
+const queryClient = new QueryClient()
+
 
 export default function RootLayout({
   children,
@@ -45,7 +51,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,20 +1,18 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { useHabits } from "../hooks/useHabits";
-import { HabitContextProps } from "../types";
-import { useUserContext } from "./user-context";
+import {  useHabits } from "../hooks/useHabits";
 
-export const HabitContext = createContext<HabitContextProps | null>(null);
+export const HabitContext = createContext<any>(null);
 
 /**
+ * 
  * HabitProvider is a custom context provider that manages the user's habits.
  * Children have acess to accessible hooks to update or retrieve their data.
  */
 export default function HabitProvider({ children }: { children: React.ReactNode }) {
 
-	const { ...userProps } = useUserContext();
-	const { ...habitHook } = useHabits(userProps.user!!);
+	const { ...habitHook } = useHabits();
 
 	return (
 		<HabitContext.Provider value={habitHook}>

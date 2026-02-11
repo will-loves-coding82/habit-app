@@ -4,21 +4,18 @@ import { Tab, Tabs } from "@heroui/tabs";
 import { Skeleton } from "@heroui/skeleton";
 import { DatePicker } from "@heroui/date-picker";
 import { Input, Textarea } from "@heroui/input";
-import { Checkbox } from "@/components/ui/checkbox"
-import { Form } from "@heroui/form";
-import React, { useActionState, useEffect, useRef, useState } from "react";
-import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
+// import { Form } from "@heroui/form";
+import React, { useEffect, useRef, useState } from "react";
+import { DateValue, getLocalTimeZone, now, today, ZonedDateTime } from "@internationalized/date";
 import { Avatar } from "@heroui/avatar";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
 import { addToast } from "@heroui/toast";
 import { ScrollShadow } from "@heroui/scroll-shadow";
 import { Progress } from "@heroui/progress";
-import { createHabitAction, CreateHabitFormState } from "./actions";
 import { cn } from "@heroui/theme";
 import { ChatMessage, Habit } from "../types";
 import HabitCard from "@/components/habit-card";
-import { Label } from "@radix-ui/react-label";
 import { BarChart, BotMessageSquare, Flame, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useStreaks } from "../hooks/useStreaks";
@@ -28,6 +25,17 @@ import { CompletionHistoryLineChart } from '@/components/completion-history';
 import { useUserContext } from '../context/user-context';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
+import { formOptions, useForm } from '@tanstack/react-form'
+import { useQueryClient } from "@tanstack/react-query";
+import { Form } from "@heroui/form";
+
+
+export interface AddHabitFormData {
+    title: string,
+    description: string,
+    due_date: DateValue | null,
+    user_timezone: string,
+}
 
 
 /**
@@ -35,33 +43,20 @@ import { Button } from '@/components/ui/button';
  * with statistics such as total habits, streaks, completion history, 
  * and progress percentage. Users can also interact with a LLM 
  * chatbot on this page as well.
- * 
- * @returns React JSX
  */
 export default function DashboardPage() {
 
   const supabase = createClient();
   const { user, isLoadingUser } = useUserContext();
 
-  const [avatarURL, setAvatarURL] = useState<string | null>(null);
-  const [donwloadingAvatar, setDownloadingAvatar] = useState(false);
-  const [selected, setSelected] = useState("Today");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isStatsOpen, setIsStatsOpen] = useState(false);
-
   const {
-    isAddingHabit,
-    isDeletingHabit,
-    isUpdatingHabit,
     todayHabits,
     weekHabits,
-    uniqueHabits,
     completionHistory,
-    refreshHabits,
-    setIsAddingHabit,
-    onCompleteHabit,
-    onDeleteHabit,
-    onUpdateHabit
+    addHabit,
+    toggleCompleteHabit,
+    editHabit,
+    deleteHabit
   } = useHabitContext();
 
   const {
@@ -70,35 +65,10 @@ export default function DashboardPage() {
     initializeStreak
   } = useStreaks(user);
 
-  const [addFormState, addFormAction] = useActionState(createHabitAction, {} as CreateHabitFormState);
-
-  // Client-side form state that is sent to the form action on the server side
-  // through the custom addFormAction
-  const [addFormData, setAddFormData] = useState<{
-    title: string,
-    description: string,
-    due_date: DateValue | null,
-    user_timezone: string,
-    is_weekly: boolean
-  }>({
-    title: "",
-    description: "",
-    due_date: null,
-    user_timezone: "",
-    is_weekly: false,
-  });
-
-
-  const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editFormData, setEditFormData] = useState<{
-    title: string | null,
-    description: string | null,
-  }>({
-    title: null,
-    description: null
-  });
-
+  const [avatarURL, setAvatarURL] = useState<string | null>(null);
+  const [donwloadingAvatar, setDownloadingAvatar] = useState(false);
+  const [selected, setSelected] = useState("Today");
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatId, setChatId] = useState<number | null>(null);
@@ -106,16 +76,64 @@ export default function DashboardPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const defaultAddHabitData: AddHabitFormData = {
+      title: "",
+      description: "",
+      due_date: null,
+      user_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  };
 
+  const addHabitForm = useForm({
+    defaultValues: defaultAddHabitData,
+    onSubmit: async ({ value }) => {
+      await addHabit.mutateAsync(value)
+      addHabitForm.reset()
+      setIsAddModalOpen(false)
+    },
+  })
+
+  useEffect(() => {
+    if (isChatOpen) {
+      scrollToBottomOfChat()
+    }
+  }, [isChatOpen, chatMessages])
+
+  useEffect(() => {
+    async function downloadImage() {
+      try {
+        setDownloadingAvatar(true);
+
+        const { data, error } = await supabase.storage
+          .from('avatars')
+          .download(`${user?.id}/profile.jpg`)
+
+        if (error) {
+          console.log('Error downloading avatar image: ', error);
+          return;
+        }
+
+        const url = URL.createObjectURL(data);
+        setAvatarURL(url);
+
+      } catch (error: any) {
+        console.log('Error downloading avatar image: ', error);
+      }
+      finally {
+        setDownloadingAvatar(false);
+      }
+    }
+
+    if (user) downloadImage();
+
+  }, [user])
 
   /**
-   * handleChatInputChange will trim the user's message and trigger
-   * a form action to submit the form data. A supabase edge function is invoked
-   * with this content and the response is saved locally in the component state
-   * for rendering in the UI.
+   * handleChatInputChange trims the user's message and triggers a form action 
+   * to submit the data. It invokes a Supabase edge function with the content 
+   * and saves the response in the component state for rendering in the UI.
    */
   const handleChatSubmitAndDisplayResponse = async (e: React.FormEvent<HTMLFormElement>) => {
-
     e.preventDefault();
 
     if (chatInput.length > 0) {
@@ -142,7 +160,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           userPrompt: chatInput,
           chatId: chatId,
-          userId: user.id,
+          userId: user?.id,
           todayDate: today.toISOString(),
           tomorrowDate: tomorrow.toISOString(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -174,7 +192,7 @@ export default function DashboardPage() {
   }
 
   /**
-  * handleChatInputChange will handle changes in the user's 
+  * handleChatInputChange handles changes in the user's 
   * message content when communicating to the LLM chatbot.
   */
   const handleChatInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,45 +201,7 @@ export default function DashboardPage() {
   };
 
   /**
-   * handleDueDateChange will update the due date of a habit 
-   * when the user wants to create a new one.
-   */
-  const handleDueDateChange = (value: DateValue | null) => {
-    if (value == null) {
-      return
-    }
-    setAddFormData((prevData) => ({
-      ...prevData,
-      due_date: value,
-    }));
-  };
-
-  /**
-   * handleModalInputChange will update the appropriate field in the 
-   * html add form data with the user's input to help create a new habit,
-   */
-  const handleModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setAddFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  /**
-   * handleEditModalInputChange will update the appropriate field in the 
-   * html edit form data with the user's input to help edit a habit.
-   */
-  const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setEditFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  /**
-   * fetchChat will retrieve all of a user's and chatbot's messages
+   * fetchChat retrieves all of a user's and chatbot's messages
    * for a particular chat id.
    */
   async function fetchChat(): Promise<number | null> {
@@ -249,7 +229,7 @@ export default function DashboardPage() {
   }
 
   /**
-  * openChat will open a chat and its messagges. If it doesn't exist,
+  * openChat opens a chat and its messagges. If it doesn't exist,
   * the method will provision a new chat for the user to begin
   * convserations with the LLM chatbot.
   */
@@ -293,7 +273,7 @@ export default function DashboardPage() {
         .from("messages")
         .select("*")
         .eq("chat_id", chat)
-        .eq("user_uid", user.id)
+        .eq("user_uid", user?.id)
 
       if (error) {
         addToast({
@@ -312,99 +292,11 @@ export default function DashboardPage() {
     }
   }
 
-
-  const refreshHabitData = () => {
-    clearForm();
-    refreshHabits();
-  }
-
-  const clearForm = () => {
-    setAddFormData({
-      title: "",
-      description: "",
-      due_date: null,
-      user_timezone: "",
-      is_weekly: false,
-    });
-  }
-
-  const resetEditForm = () => {
-    setEditFormData({
-      title: selectedHabit?.title ?? null,
-      description: selectedHabit?.description ?? null
-    })
-  }
-
   const scrollToBottomOfChat = () => {
     if (messagesEndRef) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
   }
-
-  useEffect(() => {
-    if (isChatOpen) {
-      scrollToBottomOfChat()
-    }
-  }, [isChatOpen, chatMessages])
-
-
-  // Fetches the user's profile image from a supabase bucket
-  useEffect(() => {
-    async function downloadImage() {
-      try {
-        setDownloadingAvatar(true);
-
-        const { data, error } = await supabase.storage
-          .from('avatars')
-          .download(`${user?.id}/profile.jpg`)
-
-        if (error) {
-          console.log('Error downloading avatar image: ', error);
-          return;
-        }
-
-        const url = URL.createObjectURL(data);
-        setAvatarURL(url);
-
-      } catch (error: any) {
-        console.log('Error downloading avatar image: ', error);
-      }
-      finally {
-        setDownloadingAvatar(false);
-      }
-    }
-
-    if (user) downloadImage();
-
-  }, [user])
-
-  // Displays form action results as toast messages
-  useEffect(() => {
-    setIsModalOpen(false);
-
-    if (addFormState.success) {
-      addToast({
-        title: "Habit Created",
-        description: addFormState.message || "Your habit has been created successfully!",
-        classNames: {
-          base: cn(["mb-4 mr-4"])
-        }
-      });
-      refreshHabitData();
-    }
-    if (!addFormState.success && addFormState.error) {
-      addToast({
-        title: "Error",
-        description: addFormState.error || "An error occurred while creating your habit.",
-        color: "danger",
-        classNames: {
-          base: cn(["mb-4 mr-4"])
-        }
-      });
-    }
-    setIsAddingHabit(false);
-  }, [addFormState])
-
 
   /**
    * calculateProgressForToday keeps track of the proportion of completed habits 
@@ -424,61 +316,100 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Modal
-        isOpen={isEditModalOpen}
+      {/* Add new habit modal */}
+      <Modal 
+        className="bg-accent" radius="sm" isDismissable={true}
+        isOpen={isAddModalOpen} 
         onClose={() => {
-          setIsEditModalOpen(false)
-          resetEditForm()
-        }}
-        className="bg-accent" radius="sm" isDismissable={false}>
+          addHabitForm.reset()
+          setIsAddModalOpen(false)}
+        } 
+      >
         <ModalContent>
-          <ModalHeader>Update Habit Details</ModalHeader>
+          <ModalHeader>Add a habit</ModalHeader>
           <ModalBody className="flex flex-col gap-8 mt-[-24px]">
-            <p className="text-muted-foreground text-sm">
-              Once your changes are saved, it might take a few minutes to see the changes.
-            </p>
-            <Form className="mt-[-12px]">
-              <div className="flex flex-col gap-4 w-full">
-                <Input
-                  aria-label="title"
-                  label="Title"
-                  id="title"
-                  name="title"
-                  type="text"
-                  placeholder="Enter a title"
-                  variant="bordered"
-                  radius="sm"
-                  required
-                  onChange={handleEditModalInputChange}
-                  value={editFormData.title ?? selectedHabit?.title}
-                />
+            <p className="text-muted-foreground text-sm">Habits repeat daily by default. Change this setting to weekly down below.</p>
 
-                <Textarea
-                  aria-label="description"
-                  label="Description"
-                  id="description"
-                  name="description"
-                  type="text"
-                  placeholder="Description"
-                  variant="bordered"
-                  radius="sm"
-                  required
-                  onChange={handleEditModalInputChange}
-                  value={editFormData.description ?? selectedHabit?.description}
-                />
+            <Form className="mt-[-12px]" onSubmit={(e) => {
+              e.preventDefault();
+              addHabitForm.handleSubmit()
+            }}
+            >
+              <div className="flex flex-col gap-4 w-full">
+                <addHabitForm.Field name="user_timezone" children={() =>
+                  <Input
+                    aria-label="user_timezone"
+                    type="hidden"
+                    name="user_timezone"
+                    value={Intl.DateTimeFormat().resolvedOptions().timeZone}
+                  />
+                }/>
+
+                <addHabitForm.Field name="title" children={(field) =>
+                  <Input
+                    value={field.state.value}
+                    aria-label="title"
+                    id="title"
+                    name="title"
+                    type="text"
+                    label="Title"
+                    placeholder="Enter a title"
+                    variant="bordered"
+                    radius="sm"
+                    required
+                    onChange={(e)=> field.handleChange(e.target.value)}
+                  />
+                }/>
+
+                <addHabitForm.Field name="description" children={(field) =>
+                  <Textarea
+                    value={field.state.value}
+                    aria-label="description"
+                    label="description"
+                    id="description"
+                    name="description"
+                    type="text"
+                    placeholder="Description"
+                    variant="bordered"
+                    radius="sm"
+                    required
+                    onChange={(e)=> field.handleChange(e.target.value)}
+                  />
+                }/>
+
+                <addHabitForm.Field name="due_date" children={(field) =>
+                  <DatePicker
+                    value={field.state.value}
+                    aria-label="due_date"
+                    disableAnimation
+                    isRequired
+                    showMonthAndYearPickers
+                    minValue={today(getLocalTimeZone())}
+                    label="due date"
+                    name="due_date"
+                    variant="bordered"
+                    radius="sm"
+                    granularity="minute"
+                    onChange={(date)=> {
+                      console.log("Date changed:", date) // Debug
+                      field.handleChange(date as DateValue | null)
+                    }}
+                  />
+                }/>
+              </div>
+
+              <div className="flex justify-end w-full mb-4">
+                <Button variant="outline" type="reset" size="sm" onClick={() => setIsAddModalOpen(false)} className="bg-accent">
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" className="ml-2">
+                  {addHabit.isPending ? "Adding..." : "Add Habit"}
+                </Button>
               </div>
             </Form>
-
-            <div className="flex justify-end w-full mb-4">
-              <Button type="submit" size="sm" className="ml-2" onClick={() => onUpdateHabit(selectedHabit, editFormData.title, editFormData.description)}>
-                {isUpdatingHabit ? "Updating..." : "Submit"}
-              </Button>
-            </div>
-
           </ModalBody>
         </ModalContent>
       </Modal>
-
       {
         isStatsOpen &&
         <Drawer
@@ -534,7 +465,7 @@ export default function DashboardPage() {
                       manage
                     </Link>
                   </span>
-                  <p className="font-semibold text-6xl mt-4">{uniqueHabits.length}</p>
+                  <p className="font-semibold text-6xl mt-4">0</p>
                 </div>
 
                 <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
@@ -601,7 +532,6 @@ export default function DashboardPage() {
                   onChange={handleChatInputChange}
                   value={chatInput}
                 />
-
                 <Button type="submit" className="w-fit">Send</Button>
               </Form>
             </DrawerFooter>
@@ -610,9 +540,7 @@ export default function DashboardPage() {
 
       }
 
-
       <nav className="w-full flex justify-center border-b border-b-foreground/10 bg-background h-fit py-1 " >
-
         <div className="w-full max-w-7xl flex justify-between bg-background items-center p-2 px-5 text-sm">
           <span className="flex gap-2 items-center">
             {avatarURL && <Avatar src={avatarURL} size="lg" className="w-6 h-6" classNames={{ icon: "text-primary w-16 h-16", base: "bg-accent mx-auto" }} />}
@@ -639,12 +567,10 @@ export default function DashboardPage() {
             />
           </span>
         </div>
-
       </nav>
 
 
       <section className="flex w-full justify-evenly">
-
         <div className="flex-1 w-full max-w-3xl px-5 mx-auto flex flex-col pt-16 pb-20">
           <section className="flex flex-col gap-6" >
             <section className="mt-[-24px] flex">
@@ -689,7 +615,7 @@ export default function DashboardPage() {
                     manage
                   </Link>
                 </span>
-                <p className="font-semibold text-6xl mt-4">{uniqueHabits.length}</p>
+                <p className="font-semibold text-6xl mt-4">0</p>
               </div>
 
               <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
@@ -705,7 +631,6 @@ export default function DashboardPage() {
           </section>
 
           <section className="flex items-center gap-3 justify-between mt-12">
-
             <Tabs
               key="tournament_type"
               aria-label="Options"
@@ -721,93 +646,10 @@ export default function DashboardPage() {
 
             <span className="flex w-fit justify-between gap-4">
               {/* <Button className="bg-secondary hover:bg-secondary text-white">Ask AI</Button> */}
-              <Button variant="default" size="sm" onClick={() => setIsModalOpen(true)}>
+              <Button variant="default" size="sm" onClick={() => setIsAddModalOpen(true)}>
                 Add Habit
               </Button>
             </span>
-
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} className="bg-accent" radius="sm" isDismissable={false} >
-              <ModalContent>
-                <ModalHeader>Add a habit</ModalHeader>
-                <ModalBody className="flex flex-col gap-8 mt-[-24px]">
-                  <p className="text-muted-foreground text-sm">Habits repeat daily by default. Change this setting to weekly down below.</p>
-
-                  <Form action={addFormAction} onSubmit={() => { setIsAddingHabit(true) }} className="mt-[-12px]">
-                    <div className="flex flex-col gap-4 w-full">
-
-                      <Input
-                        aria-label="user_timezone"
-                        type="hidden"
-                        name="user_timezone"
-                        value={Intl.DateTimeFormat().resolvedOptions().timeZone}
-                      />
-
-                      <Input
-                        aria-label="title"
-                        id="title"
-                        name="title"
-                        type="text"
-                        label="Title"
-                        placeholder="Enter a title"
-                        variant="bordered"
-                        radius="sm"
-                        required
-                        onChange={handleModalInputChange}
-                        value={addFormData.title}
-                      />
-
-                      <Textarea
-                        aria-label="description"
-                        label="description"
-                        id="description"
-                        name="description"
-                        type="text"
-                        placeholder="Description"
-                        variant="bordered"
-                        radius="sm"
-                        required
-                        onChange={handleModalInputChange}
-                        value={addFormData.description}
-                      />
-
-                      <DatePicker
-                        aria-label="due_date"
-                        disableAnimation
-                        isRequired
-                        showMonthAndYearPickers
-                        minValue={today(getLocalTimeZone())} // this causes time zone discrepancies when submitting
-                        label="due date"
-                        name="due_date"
-                        variant="bordered"
-                        radius="sm"
-                        granularity="minute"
-                        onChange={handleDueDateChange}
-                        value={addFormData.due_date}
-                      />
-
-                      <div className="flex gap-3 ml-[2px]">
-                        <Checkbox id="weekly" className="border-muted-foreground" checked={addFormData.is_weekly} onCheckedChange={(checked) => {
-                          setAddFormData((prevData) => ({
-                            ...prevData,
-                            is_weekly: Boolean(checked.valueOf),
-                          }));
-                        }} />
-                        <Label aria-label="weekly" htmlFor="weekly" className="text-muted-foreground text-sm">Repeats Weekly</Label>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end w-full mb-4">
-                      <Button variant="outline" type="reset" size="sm" onClick={() => setIsModalOpen(false)} className="bg-accent">
-                        Cancel
-                      </Button>
-                      <Button type="submit" size="sm" className="ml-2">
-                        {isAddingHabit ? "Adding..." : "Add Habit"}
-                      </Button>
-                    </div>
-                  </Form>
-                </ModalBody>
-              </ModalContent>
-            </Modal>
           </section>
 
           <AnimatePresence>
@@ -818,11 +660,10 @@ export default function DashboardPage() {
                     key={habit.id}
                     habit={habit}
                     type="today"
-                    isDeleting={isDeletingHabit}
-                    isUpdating={isUpdatingHabit}
-                    onUpdate={onUpdateHabit}
-                    onComplete={onCompleteHabit}
-                    onDelete={onDeleteHabit} />
+                    toggleCompleteHabit={toggleCompleteHabit}
+                    editHabit={editHabit}
+                    deleteHabit={deleteHabit}
+                  />
                 )}
               </ul>
 
@@ -845,11 +686,10 @@ export default function DashboardPage() {
                           key={habit.id}
                           habit={habit}
                           type="this_week"
-                          isDeleting={isDeletingHabit}
-                          isUpdating={isUpdatingHabit}
-                          onUpdate={onUpdateHabit}
-                          onComplete={onCompleteHabit}
-                          onDelete={onDeleteHabit} />
+                          toggleCompleteHabit={toggleCompleteHabit}
+                          editHabit={editHabit}
+                          deleteHabit={deleteHabit}
+                        />
                       ))}
                     </section>
                   </div>
@@ -858,9 +698,12 @@ export default function DashboardPage() {
               </section>
             }
           </AnimatePresence>
-
         </div>
       </section>
     </>
   );
 }
+
+
+
+

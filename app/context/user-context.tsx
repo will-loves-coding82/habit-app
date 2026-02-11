@@ -1,47 +1,37 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { UserContextProps } from "../types";
 import { User } from "@supabase/supabase-js";
+import { useQuery } from "@tanstack/react-query";
+
+export interface UserContextProps {
+	user: User | null;
+	isLoadingUser: boolean;
+}
 
 export const UserContext = createContext<UserContextProps | null>(null);
+const supabase = createClient();
 
 /**
  * UserProvider is a custom context provider that manages the user's data.
- * Data is consumed. This is a wrapper for any React children that want to 
+ * This acts as a global store for any React children that want to 
  * consume or read the information without prop drilling.
  */
 export default function UserProvider({ children }: { children: React.ReactNode }) {
 
-	const [user, setUser] = useState<User | null>(null);
-	const [isLoadingUser, setisLoadingUser] = useState(true);
-	const supabase = createClient();
-
-	const fetchUserData = async () => {
-		setisLoadingUser(true);
-
-		try {
-			const { data, error } = await supabase.auth.getUser();
-			if (error) { throw error }
-			else {
-				setUser(data.user);
-			}
-		}
-		catch (error) {
-			console.log("Error fetching user: ", error);
-		}
-		finally {
-			setisLoadingUser(false);
-		}
-	}
-
-	useEffect(() => {
-		fetchUserData();
-	}, [])
+	const {data: user, isLoading: isLoadingUser} = useQuery<User | null, Error>({
+		queryKey: ["user"],
+		queryFn: async() => {
+			const { data: supabaseData, error } = await supabase.auth.getUser();
+			if (error) throw error;
+			return supabaseData.user ?? null;
+		},
+		retry: true,
+	})
 
 	return (
-		<UserContext.Provider value={{ user: user!!, isLoadingUser: isLoadingUser }}>
+		<UserContext.Provider value={{ user: user ?? null, isLoadingUser: isLoadingUser }}>
 			{children}
 		</UserContext.Provider>
 	)
@@ -51,7 +41,7 @@ export default function UserProvider({ children }: { children: React.ReactNode }
 export const useUserContext = () => {
 	const context = useContext(UserContext);
 	if (!context) {
-		throw new Error("useHabitContext must be used within a UserProvider")
+		throw new Error("useUserContext must be used within a UserProvider")
 	}
 	return context;
 }

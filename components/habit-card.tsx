@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react"
-import { HabitCardProps } from "@/app/types";
+import { Habit, HabitCardProps } from "@/app/types";
 import { Card, CardHeader, CardBody } from "@heroui/card";
 import { Alert } from "@heroui/alert";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
@@ -14,44 +14,44 @@ import { useTheme } from "next-themes";
 import { isHabitCompletedOnTime, isHabitLate } from "@/lib/functions";
 import { Form } from "@heroui/form";
 import { Input, Textarea } from "@heroui/input";
+import { useForm } from "@tanstack/react-form";
 
+
+export interface EditHabitFormData {
+    targetHabit: Habit,
+    title: string,
+    description: string,
+}
 
 /**
  * Interactive card that displays a habit's information. Users can check off a habit by toggling 
  * the built-in checkbox form. Each card also comes with the ability to edit or delete its 
  * information in the database.
  */
-export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdate, onComplete, onDelete }: HabitCardProps) {
+export default function HabitCard({ habit, type, toggleCompleteHabit, editHabit, deleteHabit }: HabitCardProps) {
 
 	const { resolvedTheme } = useTheme();
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-	const [formData, setFormData] = useState<{
-		title: string,
-		description: string,
-	}>({
-		title: habit.title,
-		description: habit.description
-	});
 
 	const isCompletedOnTime = isHabitCompletedOnTime(habit);
 	const isLate = isHabitLate(habit);
 	const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', timeZone: 'UTC' });
 
-	const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
-		setFormData((prevData) => ({
-			...prevData,
-			[name]: value,
-		}));
+	const defaultEditHabitData: EditHabitFormData = {
+		targetHabit: habit,
+		title: "",
+		description: "",
 	};
 
-	const resetForm = () => {
-		setFormData({
-			title: habit.title,
-			description: habit.description
-		})
-	}
+	const editHabitForm = useForm({
+		defaultValues: defaultEditHabitData,
+		onSubmit: async ({ value }) => {
+			await editHabit.mutateAsync(value)
+			editHabitForm.reset()
+			setIsEditModalOpen(false)
+		},
+	})
 
 	// Polling to refresh the UI component every minute
 	const [, setNow] = useState(Date.now());
@@ -68,7 +68,7 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
 			exit={{ opacity: 0, scale: 0 }}
 			layout
 		>
-			<Modal isOpen={isDeleteModalOpen && !isDeleting} onClose={() => setIsDeleteModalOpen(false)} className="bg-accent" radius="sm" isDismissable={false} >
+			<Modal isOpen={isDeleteModalOpen && !deleteHabit.isPending} onClose={() => setIsDeleteModalOpen(false)} className="bg-accent" radius="sm" isDismissable={false} >
 				<ModalContent>
 					<ModalHeader>Delete this habit?</ModalHeader>
 
@@ -93,8 +93,8 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
 						<Button variant="outline" type="reset" onClick={() => setIsDeleteModalOpen(false)} className="bg-accent">
 							Cancel
 						</Button>
-						<Button className="ml-2 bg-danger hover:bg-danger text-white" onClick={() => onDelete(habit)}>
-							{isDeleting ? "Deleting..." : "Delete"}
+						<Button className="ml-2 bg-danger hover:bg-danger text-white" onClick={async () => deleteHabit.mutateAsync(habit)}>
+							{deleteHabit.isPending ? "Deleting..." : "Delete"}
 						</Button>
 					</ModalFooter>
 				</ModalContent>
@@ -103,8 +103,8 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
 			<Modal
 				isOpen={isEditModalOpen}
 				onClose={() => {
+					editHabitForm.reset()
 					setIsEditModalOpen(false)
-					resetForm()
 				}}
 				className="bg-accent" radius="sm" isDismissable={false}>
 				<ModalContent>
@@ -113,43 +113,52 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
 						<p className="text-muted-foreground text-sm">
 							Once your changes are saved, it might take a few minutes to see the changes.
 						</p>
-						<Form className="mt-[-12px]">
-							<div className="flex flex-col gap-4 w-full">
+						<Form className="mt-[-12px]" onSubmit={(e) => {
+							e.preventDefault();
+							editHabitForm.handleSubmit()
+						}}
+						>
+							<editHabitForm.Field name="title" children={(field) =>
 								<Input
+									className="flex flex-col gap-4 w-full"
 									aria-label="title"
 									label="Title"
 									id="title"
 									name="title"
 									type="text"
-									placeholder="Enter a title"
+									placeholder={habit.title}
 									variant="bordered"
 									radius="sm"
 									required
-									onChange={handleEditModalInputChange}
-									value={formData.title ?? habit.title}
+									defaultValue={habit.title}
+									value={field.state.value ?? habit.title}
+							    	onChange={(e)=> field.handleChange(e.target.value)}
 								/>
+							} />
 
+							<editHabitForm.Field name="description" children={(field) =>
 								<Textarea
 									aria-label="description"
+									label="Description"
 									id="description"
 									name="description"
 									type="text"
-									placeholder="Description"
+									placeholder={habit.description}
 									variant="bordered"
 									radius="sm"
 									required
-									onChange={handleEditModalInputChange}
-									value={formData.description ?? habit.description}
+									defaultValue={habit.description}
+									value={field.state.value ?? habit.description}
+								    onChange={(e)=> field.handleChange(e.target.value)}
 								/>
-							</div>
+							} />
 						</Form>
 
 						<div className="flex justify-end w-full mb-4">
-							<Button type="submit" size="sm" className="ml-2" onClick={() => onUpdate(habit, formData.title, formData.description)}>
-								{isUpdating ? "Updating..." : "Submit"}
+							<Button type="submit" size="sm" className="ml-2" onClick={editHabitForm.handleSubmit}>
+								{editHabit.isPending ? "Updating..." : "Submit"}
 							</Button>
 						</div>
-
 					</ModalBody>
 				</ModalContent>
 			</Modal>
@@ -200,8 +209,8 @@ export default function HabitCard({ habit, type, isDeleting, isUpdating, onUpdat
 					<Checkbox
 						disabled={type == "this_week"}
 						checked={habit.is_complete}
-						onCheckedChange={(checked) =>
-							onComplete(habit, Boolean(checked))
+						onCheckedChange={async (checked) =>
+							toggleCompleteHabit.mutateAsync({ targetHabit: habit, isComplete: Boolean(checked) })
 						}
 						className="mt-1 mr-2"
 					/>
