@@ -15,24 +15,27 @@ import { Progress } from "@heroui/progress";
 import { cn } from "@heroui/theme";
 import { ChatMessage, Habit } from "../types";
 import HabitCard from "@/components/habit-card";
-import { BarChart, BotMessageSquare, Dumbbell, Loader, X } from "lucide-react";
+import { BarChart, BotMessageSquare, Dumbbell, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
-import Link from 'next/link';
 import { CompletionHistoryLineChart } from '@/components/completion-history';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
 import { useForm } from '@tanstack/react-form'
 import { Form } from "@heroui/form";
 import userQueries from "../query/user";
 import habitQueries from "../query/data";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Divider } from "@heroui/divider";
+import { Button } from "@/components/ui/button";
 
 export interface AddHabitFormData {
     title: string,
     description: string,
     due_date: DateValue | null,
     user_timezone: string,
+}
+
+export interface ChatFormData {
+    prompt: string
 }
 
 /**
@@ -44,6 +47,8 @@ export interface AddHabitFormData {
 export default function DashboardPage() {
 
   const supabase = createClient();
+  const queryClient = useQueryClient();
+
   const {data: user, isFetching: isLoadingUser} = useQuery(userQueries.getUser())
   const {data: completionHistory, isFetching: isLoadingCompletionHistory} = useQuery(habitQueries.getCompletionHistory())
   const {data: completionRates, isFetching: isLoadingCompletionRates} = useQuery(habitQueries.getCompletionRates())
@@ -51,18 +56,15 @@ export default function DashboardPage() {
   const {data: upcomingHabits} = useQuery(habitQueries.getUpcomingHabits())
   const {mutate: mutateAddHabit, isPending: addHabitIsPending} = habitQueries.addHabit()
 
-  const [avatarURL, setAvatarURL] = useState<string | null>(null);
-  const [donwloadingAvatar, setDownloadingAvatar] = useState(false);
   const [selected, setSelected] = useState("Today");
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [showCreateChatButton, setShowCreateChatButton] = useState(false);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatId, setChatId] = useState<number | null>(null);
-  const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
   const defaultAddHabitData: AddHabitFormData = {
       title: "",
       description: "",
@@ -70,61 +72,54 @@ export default function DashboardPage() {
       user_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
   };
 
+  const defaultChatFormData: ChatFormData = {
+    prompt: ""
+  }
+
   const addHabitForm = useForm({
     defaultValues: defaultAddHabitData,
     onSubmit: async ({ value }) => {
-      await mutateAddHabit(value)
+      mutateAddHabit(value)
       addHabitForm.reset()
       setIsAddModalOpen(false)
     },
   })
 
-  useEffect(() => {
-    if (isChatOpen) {
-      scrollToBottomOfChat()
-    }
-  }, [isChatOpen, chatMessages])
-
-  useEffect(() => {
-    async function downloadImage() {
+  const { data: avatarURL, isFetching: isLoadingAvatar } = useQuery({
+    enabled: !!user,
+    initialData: "",
+    queryKey: ["avatar"],
+    queryFn: async() => {
       try {
-        setDownloadingAvatar(true);
-
         const { data, error } = await supabase.storage
           .from('avatars')
           .download(`${user?.id}/profile.jpg`)
 
         if (error) {
           console.log('Error downloading avatar image: ', error);
-          return;
+          return null;
         }
 
         const url = URL.createObjectURL(data);
-        setAvatarURL(url);
+        return url;
 
       } catch (error: any) {
         console.log('Error downloading avatar image: ', error);
+        return null;
       }
-      finally {
-        setDownloadingAvatar(false);
-      }
-    }
+    },
+  })
 
-    if (user) downloadImage();
 
-  }, [user])
+  const { mutate: sendMessage, isPending: isChatResponsePending } = useMutation({
+    mutationFn: async(value: ChatFormData) => {
 
-  /**
-   * handleChatInputChange trims the user's message and triggers a form action 
-   * to submit the data. It invokes a Supabase edge function with the content 
-   * and saves the response in the component state for rendering in the UI.
-   */
-  const handleChatSubmitAndDisplayResponse = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+      console.log("send message value: " + value.prompt)
+      if(value.prompt.length == 0) {
+        return
+      } 
 
-    if (chatInput.length > 0) {
-
-      const trimmedInput = chatInput.trim();
+      const trimmedInput = value.prompt.trim();
       const userMessage: ChatMessage = {
         created_at: new Date().toLocaleString(),
         role: "user",
@@ -132,11 +127,11 @@ export default function DashboardPage() {
         chat_id: chatId!!,
       }
 
-      setChatMessages(prev => [...prev, userMessage])
-      setChatInput("");
+      chatForm.reset()
+      queryClient.setQueryData(["chat_messages"], (prev: ChatMessage[]) => {
+        return [...prev, userMessage]
+      })
 
-      // Wait for response from LLM
-      // TODO: A loading status would be helpful to show the request is processing
       const now = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const tomorrow = new Date(today);
@@ -144,7 +139,7 @@ export default function DashboardPage() {
 
       const { data, error } = await supabase.functions.invoke("generate-ai-answer", {
         body: JSON.stringify({
-          userPrompt: chatInput,
+          userPrompt: trimmedInput,
           chatId: chatId,
           userId: user?.id,
           todayDate: today.toISOString(),
@@ -155,86 +150,12 @@ export default function DashboardPage() {
       });
 
       if (error != null) {
+        queryClient.setQueryData(["chat_messages"], (prev: ChatMessage[]) => {
+          return prev.slice(0, -2)
+        })
+
         addToast({
           title: "Error generating AI response",
-          description: error,
-          color: "danger",
-          classNames: {
-            base: cn(["mb-4 mr-4"])
-          }
-        });
-      }
-      else {
-        const aiMessage: ChatMessage = {
-          created_at: new Date().toLocaleString(),
-          role: "assistant",
-          content: data.body.finalResponse,
-          chat_id: chatId!!,
-        };
-
-        setChatMessages(prev => [...prev, aiMessage])
-      }
-    }
-  }
-
-  /**
-  * handleChatInputChange handles changes in the user's 
-  * message content when communicating to the LLM chatbot.
-  */
-  const handleChatInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    setChatInput(value);
-  };
-
-  /**
-   * fetchChat retrieves all of a user's and chatbot's messages
-   * for a particular chat id.
-   */
-  async function fetchChat(): Promise<number | null> {
-    const { data, error } = await supabase
-      .from("chats")
-      .select("id")
-      .eq("user_uid", user!!.id)
-      .maybeSingle()
-
-    if (error) {
-      addToast({
-        title: "Error",
-        description: "An error occurred while fetching chats.",
-        color: "danger",
-        classNames: {
-          base: cn(["mb-4 mr-4"])
-        }
-      });
-
-      return null;
-    }
-
-    console.log("User belongs to chatId: ", data?.id)
-    return data?.id ?? null;
-  }
-
-  /**
-  * openChat opens a chat and its messagges. If it doesn't exist,
-  * the method will provision a new chat for the user to begin
-  * convserations with the LLM chatbot.
-  */
-  const openOrCreateChat = async () => {
-    if (chatMessages.length > 0 || chatId != null) {
-      return;
-    }
-
-    const chat = await fetchChat();
-
-    // Create a new chat if it doesn't exist already
-    if (chat == null) {
-      const { error } = await supabase.from("chats")
-        .insert({
-          user_uid: user!!.id
-        })
-      if (error) {
-        addToast({
-          title: "An error occured creating your chat",
           description: error.message,
           color: "danger",
           classNames: {
@@ -243,23 +164,79 @@ export default function DashboardPage() {
         });
       }
       else {
-        // TODO: Create an edge function that will 
-        // return the created chat id to avoid refetching
-        console.log("successfully created new chat")
-        const chat = await fetchChat();
-        setChatId(chat);
+        const aiResponse: ChatMessage = {
+          created_at: new Date().toLocaleString(),
+          role: "assistant",
+          content: data.body.finalResponse,
+          chat_id: chatId!!,
+        };
+
+        queryClient.setQueryData(["chat_messages"], (prev: ChatMessage[]) => {
+          const slicedMessages = prev.slice(0, -1)
+          return [...slicedMessages, aiResponse]
+        })
+      }
+    }
+  })
+
+  const { data: chatId } = useQuery<number | null>({
+    queryKey: ["chat_id"],
+    initialData: null,
+    enabled: !!user,
+    queryFn: async () => {
+      console.log(`fetching messages with userId ${user!!.id}`)
+      const { data, error } = await supabase
+        .from("chats")
+        .select("id")
+        .eq("user_uid", user!!.id)
+        .maybeSingle()
+
+      if (error) {
+        console.log(error)
+        return null;
       }
 
-    } else {
+      if (data == null) {
+        setShowCreateChatButton(true)
+        return null;
+      }
 
-      // Otherwise, grab the data for the exisiting chat
-      setChatId(chat);
+      return data!!.id;
+    }
+  })
 
+  const { mutate: createChat, isPending: isCreatingChat } = useMutation({
+    mutationFn: async() => {
+      const { data, error } = await supabase.from("chats").insert({user_uid: user!!.id}).select()
+      if (error) {
+        throw error;
+      }
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["chat_id"], () => {
+        return data[0].id
+      })
+
+      setShowCreateChatButton(false);
+    },
+    onError: (error) => {
+      console.log(error)
+    },
+  })
+
+  const { data: chatMessages } = useQuery<ChatMessage[]>({
+    queryKey: ["chat_messages"],
+    initialData: [],
+    enabled: !!user && chatId != null,
+    queryFn: async() => {
+
+      console.log(`fetching messages with chatId ${chatId} and userId ${user!!.id}`)
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .eq("chat_id", chat)
-        .eq("user_uid", user?.id)
+        .eq("chat_id", chatId!!)
+        .eq("user_uid", user!!.id)
 
       if (error) {
         addToast({
@@ -271,12 +248,19 @@ export default function DashboardPage() {
           }
         });
       }
-      else {
-        console.log("Chat messages: ", data)
-        setChatMessages(data)
-      }
+      return data as ChatMessage[]
     }
-  }
+  })
+
+  // const openChat = async () => {
+  //   if (chatMessages.length > 0 || chatId != null) {
+  //     return;
+  //   }
+
+  //   queryClient.invalidateQueries({
+  //     queryKey: ["chat_messages"]
+  //   })
+  // }
 
   const scrollToBottomOfChat = () => {
     if (messagesEndRef) {
@@ -299,6 +283,36 @@ export default function DashboardPage() {
 
     return Math.ceil((numCompeleted / todayHabits.length) * 100);
   }
+
+  const chatForm = useForm({
+      defaultValues: defaultChatFormData,
+      onSubmit: async({value}) =>{
+          sendMessage(value)
+      }
+  })
+
+  useEffect(() => {
+    const loadingMessage : ChatMessage = {
+      created_at: new Date().toLocaleString(),
+      role: "assistant",
+      content: "thinking...",
+      chat_id: chatId!!,
+    }
+    
+    if (isChatResponsePending) {
+      queryClient.setQueryData(["chat_messages"], (prev: ChatMessage[]) => {
+        return [...prev, loadingMessage]
+      })
+    }
+  }, [isChatResponsePending])
+
+
+  useEffect(() => {
+    if (isChatOpen) {
+      scrollToBottomOfChat()
+    }
+  }, [isChatOpen, chatMessages])
+
 
   return (
     <>
@@ -377,7 +391,6 @@ export default function DashboardPage() {
                     radius="sm"
                     granularity="minute"
                     onChange={(date)=> {
-                      console.log("Date changed:", date) // Debug
                       field.handleChange(date as DateValue | null)
                     }}
                   />
@@ -491,38 +504,54 @@ export default function DashboardPage() {
               <X size={16} onClick={() => setIsChatOpen(false)} className="hover:cursor-pointer" />
             </DrawerHeader>
 
-            <DrawerBody>
-              <ScrollShadow hideScrollBar className="overflow-y-scroll flex flex-col gap-8 h-full">
-                {chatMessages.map((message, idx) => (
 
-                  <div className="flex flex-row" key={idx} ref={(idx == chatMessages.length - 1) ? messagesEndRef : null}>
-                    {message.role == "assistant" && <BotMessageSquare className={`hover:cursor-pointer text-primary mr-2 bg-muted h-9 w-9 p-2 rounded-full`} />}
-                    <div className={`max-w-sm w-fit rounded-lg ${message.role == "assistant" ? "mr-auto bg-accent flex flex-start" : "ml-auto bg-secondary text-white flex flex-end text-right"}`}>
-                      <p className="mx-4 my-2">{message.content}</p>
+              
+              <DrawerBody>
+                {
+                showCreateChatButton ? <Button className="m-auto w-fit" onClick={() => createChat()}>
+                  {isCreatingChat ? "Creating..." : "Create Chat"}
+                </Button> :
+                  
+                <ScrollShadow hideScrollBar className="overflow-y-scroll flex flex-col gap-8 h-full">
+                  {chatMessages.map((message, idx) => (
+
+                    <div className="flex flex-row" key={idx} ref={(idx == chatMessages.length - 1) ? messagesEndRef : null}>
+                      {message.role == "assistant" && <BotMessageSquare className={`hover:cursor-pointer text-primary mr-2 bg-muted h-9 w-9 p-2 rounded-full`} />}
+                      <div className={`max-w-sm w-fit rounded-lg ${message.role == "assistant" ? "mr-auto bg-accent flex flex-start" : "ml-auto bg-secondary text-white flex flex-end text-right"}`}>
+                        <p className="mx-4 my-2">{message.content}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </ScrollShadow>
-            </DrawerBody>
+                  ))}
+                </ScrollShadow>
+                }
+              </DrawerBody>
+            
 
             <DrawerFooter>
-              <Form
-                onSubmit={(e) => { handleChatSubmitAndDisplayResponse(e) }}
-                className="flex flex-row items-center w-screen gap-4">
-                <Input
-                  aria-label="search"
-                  className="w-full"
-                  id="prompt"
-                  name="prompt"
-                  type="text"
-                  placeholder="Type something"
-                  variant="bordered"
-                  radius="sm"
-                  required
-                  onChange={handleChatInputChange}
-                  value={chatInput}
+              <Form  
+                className="mt-[-12px] flex flex-row items-center w-screen gap-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  chatForm.handleSubmit()
+                }}
+              >
+                <chatForm.Field name="prompt" children={(field) =>
+                  <Input
+                    aria-label="search"
+                    className="w-full"
+                    id="prompt"
+                    name="prompt"
+                    type="text"
+                    placeholder="Type something"
+                    variant="bordered"
+                    radius="sm"
+                    required
+                    disabled={showCreateChatButton}
+                    onChange={(e)=> field.handleChange(e.target.value)}
+                    value={field.state.value}
+                  />} 
                 />
-                <Button type="submit" className="w-fit">Send</Button>
+                <Button type="submit" className="bg-secondary w-fit text-white" disabled={showCreateChatButton}>Send</Button>
               </Form>
             </DrawerFooter>
           </DrawerContent>
@@ -549,7 +578,6 @@ export default function DashboardPage() {
             <BarChart className={`hover:cursor-pointer sm:hidden  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick={async () => setIsStatsOpen(true)} />
             <BotMessageSquare className={`hover:cursor-pointer  ${user ? "text-primary" : "text-muted-foreground"}`} size={20} onClick={async () => {
               if (user) {
-                await openOrCreateChat()
                 setIsChatOpen(!isChatOpen);
               }
             }}
