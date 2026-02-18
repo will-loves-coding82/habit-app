@@ -96,7 +96,34 @@ export function isHabitCompletedOnTime(habit: Habit): boolean {
         return false;
     }
 
-    return habit.is_complete && (habit.completed_date < habit.due_date)
+    const completedDate = new Date(habit.completed_date)
+    const dueDate = new Date(habit.due_date)
+    const difference = Math.abs(dueDate.getDate() - completedDate.getDate())
+
+    return habit.is_complete && (completedDate < dueDate && difference < 1)
+}
+
+
+/**
+ * Determines if a habit was completed early.
+ *
+ * This function checks whether a habit has been marked as complete and if it was completed
+ * at least one day before its due date.
+ *
+ * @param habit - The habit object containing information about its completion and due dates.
+ * @returns `true` if the habit is complete and was completed at least one day before the due date, otherwise `false`.
+ */
+export function isHabitCompletedEarly(habit: Habit): boolean {
+
+    if (!habit.completed_date) {
+        return false;
+    }
+
+    const completedDate = new Date(habit.completed_date)
+    const dueDate = new Date(habit.due_date)
+    const difference = Math.abs(dueDate.getDate() - completedDate.getDate())
+
+    return habit.is_complete && (difference >= 1)
 }
 
 /**

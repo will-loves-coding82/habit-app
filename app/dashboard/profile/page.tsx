@@ -2,20 +2,17 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { Avatar } from "@heroui/avatar";
-import { Key, useCallback, useEffect, useState } from "react";
-import { Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from "@heroui/table";
-import { useHabitContext } from "@/app/context/habit-context";
-import { Habit } from "../../types";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
-import { Ellipsis, Pen, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Calendar, Pen, Upload } from "lucide-react";
 import { CircularProgress } from "@heroui/progress";
 import { Modal, ModalContent, ModalHeader, ModalBody } from "@heroui/modal";
 import { Button } from "@/components/ui/button";
 import { addToast } from "@heroui/toast";
 import { cn } from "@heroui/theme";
-import { Input, Textarea } from "@heroui/input";
-import { Form } from "@heroui/form";
-import { useUserContext } from "@/app/context/user-context";
+import { useQuery } from "@tanstack/react-query";
+import userQueries from "../../query/user";
+import { Card } from "@heroui/card";
+import { useRouter } from "next/navigation";
 
 
 /**
@@ -27,31 +24,19 @@ import { useUserContext } from "@/app/context/user-context";
 export default function ProfilePage() {
 
 	const supabase = createClient();
-	const { ...userProps } = useUserContext();
-	const user = userProps.user
+	const router = useRouter();
+	const logout = async () => {
+		const supabase = createClient();
+		await supabase.auth.signOut();
+		router.push("/");
+	};
+
+  	const {data: user, isFetching: isLoadingUser} = useQuery(userQueries.getUser())
 
 	const [avatarURL, setAvatarURL] = useState<string | null>(null);
 	const [uploadingAvatar, setUploadingAvatar] = useState(false);
 	const [downloadingAvatar, setDownloadingAvatar] = useState(false);
-
-	const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
-	const [formData, setFormData] = useState<{
-		title: string | null,
-		description: string | null,
-	}>({
-		title: null,
-		description: null
-	});
-
 	const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
-	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-	const { uniqueHabits, isLoadingUniqueHabits } = useHabitContext();
-
-	const {
-		isUpdatingHabit,
-		onDeleteUniqueHabit,
-		onUpdateHabit
-	} = useHabitContext();
 
 	useEffect(() => {
 		async function downloadImage() {
@@ -70,27 +55,9 @@ export default function ProfilePage() {
 			}
 
 			setDownloadingAvatar(false)
-
 		}
 		if (user) { downloadImage() }
 	}, [user])
-
-
-	const handleEditModalInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
-		setFormData((prevData) => ({
-			...prevData,
-			[name]: value,
-		}));
-	};
-
-	const resetForm = () => {
-		setFormData({
-			title: selectedHabit?.title ?? null,
-			description: selectedHabit?.description ?? null
-		})
-	}
-
 
 	// https://supabase.com/docs/guides/getting-started/tutorials/with-nextjs?queryGroups=database-method&database-method=dashboard&queryGroups=language&language=ts#create-an-upload-widget
 	const uploadAvatar: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
@@ -161,78 +128,6 @@ export default function ProfilePage() {
 		}
 	}
 
-	const columns = [
-		{
-			key: "title",
-			label: "TITLE"
-		},
-		{
-			key: "created_at",
-			label: "CREATED DATE"
-		},
-		{
-			key: "recurrence",
-			label: "RECURRENCE"
-		},
-		{
-			key: "actions",
-			label: "ACTIONS"
-		}
-	]
-
-	const renderCell = useCallback((habit: Habit, columnKey: Key) => {
-		switch (columnKey) {
-			case "title":
-				return (
-					<p>{habit.title}</p>
-				)
-			case "recurrence":
-				return (
-					<p>{habit.recurrence_type}</p>
-				)
-			case "created_at":
-				return (
-					<p>{new Date(habit.created_at).toLocaleString("en-US", {
-						month: "short",
-						day: "numeric",
-						hour: "numeric",
-						minute: "2-digit",
-						hour12: true,
-					}).replace("at", "")}
-					</p>
-				)
-			case "actions":
-				return (
-					<>
-						<div className="relative flex justify-start items-center gap-2">
-							<Dropdown className="bg-accent" backdrop="blur" radius="sm">
-								<DropdownTrigger onClick={() => setSelectedHabit(habit)}>
-									<Ellipsis className="rounded-sm hover:cursor-pointer" />
-								</DropdownTrigger>
-								<DropdownMenu aria-label="Static Actions">
-									<DropdownItem
-										key="edit"
-										onClick={() => {
-											setIsEditModalOpen(true)
-											setFormData({
-												title: habit.title,
-												description: habit.description
-											})
-										}}>
-										Edit habit
-									</DropdownItem>
-									<DropdownItem key="delete" className="text-danger" color="danger" onClick={() => onDeleteUniqueHabit(habit)}>
-										Delete habit
-									</DropdownItem>
-								</DropdownMenu>
-							</Dropdown>
-						</div>
-					</>
-				)
-
-		}
-	}, [])
-
 	return (
 		<section className="flex flex-col py-16 w-full max-w-3xl px-5 mx-auto flex flex-col justify-center gap-8 text-center">
 			<div className="relative inline-flex mx-auto">
@@ -250,60 +145,6 @@ export default function ProfilePage() {
 					<Pen size={12} />
 				</button>
 
-				<Modal
-					isOpen={isEditModalOpen}
-					onClose={() => {
-						setIsEditModalOpen(false)
-						resetForm()
-					}}
-					className="bg-accent" radius="sm" isDismissable={false}>
-					<ModalContent>
-						<ModalHeader>Update Habit Details</ModalHeader>
-						<ModalBody className="flex flex-col gap-8 mt-[-24px]">
-							<p className="text-muted-foreground text-sm">
-								Once your changes are saved, it might take a few minutes to see the changes.
-							</p>
-							<Form className="mt-[-12px]">
-								<div className="flex flex-col gap-4 w-full">
-									<Input
-										aria-label="title"
-										id="title"
-										name="title"
-										type="text"
-										label="Title"
-										placeholder="Enter a title"
-										variant="bordered"
-										radius="sm"
-										required
-										onChange={handleEditModalInputChange}
-										value={formData.title ?? selectedHabit?.title}
-									/>
-
-									<Textarea
-										aria-label="description"
-										id="description"
-										name="description"
-										type="text"
-										placeholder="Description"
-										variant="bordered"
-										radius="sm"
-										required
-										onChange={handleEditModalInputChange}
-										value={formData.description ?? selectedHabit?.description}
-									/>
-								</div>
-							</Form>
-
-							<div className="flex justify-end w-full mb-4">
-								<Button type="submit" size="sm" className="ml-2" onClick={() => onUpdateHabit(selectedHabit, formData.title, formData.description)}>
-									{isUpdatingHabit ? "Updating..." : "Submit"}
-								</Button>
-							</div>
-
-						</ModalBody>
-					</ModalContent>
-				</Modal>
-
 				<Modal isOpen={isAvatarModalOpen} onClose={() => setIsAvatarModalOpen(false)} className="bg-accent" radius="sm" isDismissable={false} >
 					<ModalContent>
 						<ModalHeader>Upload a Photo</ModalHeader>
@@ -317,7 +158,7 @@ export default function ProfilePage() {
 							</label>
 
 							<div className="flex justify-end w-full mb-4">
-								<Button variant="default" type="reset" size="sm" onClick={() => setIsEditModalOpen(false)}>
+								<Button variant="default" type="reset" size="sm" onClick={() => setIsAvatarModalOpen(false)}>
 									Cancel
 								</Button>
 							</div>
@@ -332,32 +173,27 @@ export default function ProfilePage() {
 				<p className="text-muted-foreground">{user?.email}</p>
 			</header>
 
-			<Table
-				fullWidth={true}
-				shadow="none"
-				aria-label="Example table with dynamic content"
-				classNames={{
-					table: "min-h-[180px]",
-				}}
-			>
-				<TableHeader columns={columns}>
-					{(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
-				</TableHeader>
-				<TableBody
-					isLoading={isLoadingUniqueHabits}
-					loadingContent={<CircularProgress />}
-					items={uniqueHabits}
-					emptyContent={"No rows to display."}
-				>
-					{(item: Habit) => (
-						<TableRow key={item.key}>
-							{(columnKey) =>
-								<TableCell>{renderCell(item, columnKey)}</TableCell>
-							}
-						</TableRow>
-					)}
-				</TableBody>
-			</Table>
+			<Card radius="lg" shadow="none" className="p-4 w-full max-w-lg mx-auto mt-12 bg-card text-muted-foreground">
+				<span className="inline-flex justify-between items-center">
+					<div className="inline-flex items-center gap-4 w-fit">
+						<Calendar size={24}/>
+						<p className="mt-1 font-medium">Joined</p>
+					</div>
+					<p className="mt-1">
+						{ user &&
+							new Date(user.created_at).toLocaleString("en-US", {
+								year: "numeric",
+								month: "short",
+								day: "numeric",
+								hour12: true,
+							}).replace("at", "")
+						}
+					</p>
+				</span>
+			</Card>
+
+			<Button onClick={logout} className="bg-primary w-full max-w-lg text-muted rounded-xl py-3 px-4 mx-auto hover:cursor-pointer">Logout</Button>
+
 		</section>
 	)
 }

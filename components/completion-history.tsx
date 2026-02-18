@@ -27,7 +27,7 @@ ChartJS.register(
 type CompletionHistoryLineChartProps = {
 	completionHistory: CompletionHistory,
 	todayHabits: Habit[],
-	weekHabits: Map<string, Habit[]>
+	upcomingHabits: Map<string, Habit[]>
 }
 
 /**
@@ -41,9 +41,9 @@ export const CompletionHistoryLineChart = memo(({ completionHistory }: Completio
 		labels,
 		datasets: [{
 			data: completionHistory,
-			borderColor: 'rgba(46, 136, 172, 1)',
+			borderColor: 'rgb(33, 84, 193)',
 			tension: 0.3,
-			pointBackgroundColor: 'rgba(46, 136, 172, 1)'
+			pointBackgroundColor: 'rgb(33, 84, 193)'
 		}],
 	}
 
