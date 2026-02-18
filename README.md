@@ -1,7 +1,3 @@
- ![hero preview](/public/readme/hero.png)
- ![dashboard preview](/public/readme/dashboard.png)
- ![schema preview](/public/readme/schema.png)
-
 ## Features
 
 * User Auth with Supabase
