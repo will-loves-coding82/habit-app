@@ -6,7 +6,6 @@
 
 * User Auth with Supabase
 * Create, Edit, and Delete habits with Supabase PostgreSQL
-* Daily cron jobs that duplicate your habits each day and track your streaks
 * Essential statistics in a personal dashboard to track your progress
 * Chat GPT LLM Assistant via Edge Functions
   * Built with 4.1 mini and AI Tooling to fetch user's data based on natural language queries
@@ -15,8 +14,7 @@
 ## Project Structure
 
 * /app: Entrypoint to the home page
-* /hooks: Reusable logic to manage complex state operations
-* /context: Centralizes and manages state for downstream client components
+* /queries: Reusable tanstack query options and mutation functions that are used in client components
 * /dashboard:
   * /profile: User profile management
   * /actions: Server actions for creating new habits
@@ -30,6 +28,7 @@
 ## Tools
 
 * TypeScript
+* [Tanstack Query](https://tanstack.com/query/latest)
 * [React Chart JS 2](https://react-chartjs-2.js.org)
 * [Tailwind CSS](https://tailwindcss.com)
 * [Hero UI Library](https://www.heroui.com)
