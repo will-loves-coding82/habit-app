@@ -1,15 +1,18 @@
-import { createClient } from "@/lib/supabase/server";
-import { LogoutButton } from "./logout-button";
+"use client";
+
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export async function DashboardAuthButton() {
-	const supabase = await createClient();
-	const {
-		data: { user }
-	} = await supabase.auth.getUser();
+	const router = useRouter();
+	const logout = async () => {
+		const supabase = createClient();
+		await supabase.auth.signOut();
+		router.push("/");
+	};
 
 	return (
-		<div className="flex items-center gap-4 hover:cursor-pointer">
-			<LogoutButton />
-		</div>
+		<Button onClick={logout} className="text-sm text-muted">Logout</Button>
 	)
 }

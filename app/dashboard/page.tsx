@@ -4,9 +4,8 @@ import { Tab, Tabs } from "@heroui/tabs";
 import { Skeleton } from "@heroui/skeleton";
 import { DatePicker } from "@heroui/date-picker";
 import { Input, Textarea } from "@heroui/input";
-// import { Form } from "@heroui/form";
 import React, { useEffect, useRef, useState } from "react";
-import { DateValue, getLocalTimeZone, now, today, ZonedDateTime } from "@internationalized/date";
+import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { Avatar } from "@heroui/avatar";
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/modal";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
@@ -16,19 +15,18 @@ import { Progress } from "@heroui/progress";
 import { cn } from "@heroui/theme";
 import { ChatMessage, Habit } from "../types";
 import HabitCard from "@/components/habit-card";
-import { BarChart, BotMessageSquare, Flame, X } from "lucide-react";
+import { BarChart, BotMessageSquare, Dumbbell, Loader, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
-import { useStreaks } from "../hooks/useStreaks";
-import { useHabitContext } from '../context/habit-context';
 import Link from 'next/link';
 import { CompletionHistoryLineChart } from '@/components/completion-history';
-import { useUserContext } from '../context/user-context';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { formOptions, useForm } from '@tanstack/react-form'
-import { useQueryClient } from "@tanstack/react-query";
+import { useForm } from '@tanstack/react-form'
 import { Form } from "@heroui/form";
-
+import userQueries from "../query/user";
+import habitQueries from "../query/data";
+import { useQuery } from "@tanstack/react-query";
+import { Divider } from "@heroui/divider";
 
 export interface AddHabitFormData {
     title: string,
@@ -36,7 +34,6 @@ export interface AddHabitFormData {
     due_date: DateValue | null,
     user_timezone: string,
 }
-
 
 /**
  * DashboardPage defines the interace to view and update a user's habits. Comes 
@@ -47,23 +44,12 @@ export interface AddHabitFormData {
 export default function DashboardPage() {
 
   const supabase = createClient();
-  const { user, isLoadingUser } = useUserContext();
-
-  const {
-    todayHabits,
-    weekHabits,
-    completionHistory,
-    addHabit,
-    toggleCompleteHabit,
-    editHabit,
-    deleteHabit
-  } = useHabitContext();
-
-  const {
-    streak,
-    hasStreak,
-    initializeStreak
-  } = useStreaks(user);
+  const {data: user, isFetching: isLoadingUser} = useQuery(userQueries.getUser())
+  const {data: completionHistory, isFetching: isLoadingCompletionHistory} = useQuery(habitQueries.getCompletionHistory())
+  const {data: completionRates, isFetching: isLoadingCompletionRates} = useQuery(habitQueries.getCompletionRates())
+  const {data: todayHabits} = useQuery(habitQueries.getTodayHabits())
+  const {data: upcomingHabits} = useQuery(habitQueries.getUpcomingHabits())
+  const {mutate: mutateAddHabit, isPending: addHabitIsPending} = habitQueries.addHabit()
 
   const [avatarURL, setAvatarURL] = useState<string | null>(null);
   const [donwloadingAvatar, setDownloadingAvatar] = useState(false);
@@ -87,7 +73,7 @@ export default function DashboardPage() {
   const addHabitForm = useForm({
     defaultValues: defaultAddHabitData,
     onSubmit: async ({ value }) => {
-      await addHabit.mutateAsync(value)
+      await mutateAddHabit(value)
       addHabitForm.reset()
       setIsAddModalOpen(false)
     },
@@ -318,7 +304,7 @@ export default function DashboardPage() {
     <>
       {/* Add new habit modal */}
       <Modal 
-        className="bg-accent" radius="sm" isDismissable={true}
+        radius="md" isDismissable={true}
         isOpen={isAddModalOpen} 
         onClose={() => {
           addHabitForm.reset()
@@ -398,12 +384,12 @@ export default function DashboardPage() {
                 }/>
               </div>
 
-              <div className="flex justify-end w-full mb-4">
-                <Button variant="outline" type="reset" size="sm" onClick={() => setIsAddModalOpen(false)} className="bg-accent">
+              <div className="flex justify-end w-full my-4">
+                <Button variant="ghost" type="reset" size="sm" onClick={() => setIsAddModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" className="ml-2">
-                  {addHabit.isPending ? "Adding..." : "Add Habit"}
+                <Button variant="secondary" type="submit" size="sm" className="ml-2 text-white">
+                  {addHabitIsPending ? "Adding..." : "Add Habit"}
                 </Button>
               </div>
             </Form>
@@ -429,8 +415,7 @@ export default function DashboardPage() {
             </DrawerHeader>
 
             <DrawerBody>
-              <section className="flex flex-col sm:grid sm:grid-flow-cols sm:grid-cols-3 sm:grid-rows-2 gap-4 sm:max-h-[320px] pb-16">
-
+              <section className="flex flex-col gap-8 pb-16">
                 <div className="flex flex-col col-span-2 bg-card rounded-md p-4">
                   <h3 className="text-lg font-medium">Today's Progress</h3>
                   <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
@@ -454,37 +439,42 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground text-sm">Past 7 days</p>
                   </article>
 
-                  <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits} />
+                  <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} upcomingHabits={upcomingHabits} />
                 </div>
 
-                <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
-                  <span className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Total Habits</h3>
+                <div className="h-44 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
+                   <span className="flex gap-4 items-start">
+                  <Dumbbell size={46} className="text-blue-500 bg-blue-600/20 p-3 rounded-xl"/>
+                  <header>
+                    <h3 className="text-lg font-medium">Completion Rate</h3>
+                    <p className="text-sm text-muted-foreground">Total averages</p>
+                  </header>
+                </span>
 
-                    <Link href={"/dashboard/profile"} className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">
-                      manage
-                    </Link>
-                  </span>
-                  <p className="font-semibold text-6xl mt-4">0</p>
-                </div>
-
-                <div className="h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
-                  <span className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Streak</h3>
-                    <div className="p-2 bg-warning/25 rounded-full items-center">
-                      <Flame size={20} className="text-warning" />
+                   <span className="flex justify-between mt-6">
+                    <div className="w-full">
+                      <span>
+                        <p className="text-2xl font-medium mt-2">{completionRates.total > 0 ? (completionRates.onTime / completionRates.total * 100).toFixed(0) : 0}%</p>
+                        <p className="text-muted-foreground">On time</p>
+                      </span>
                     </div>
-                  </span>
-                  {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
+                  
+                    <Divider orientation="vertical" className="border-2"/>
+                    <div className="w-full">
+                      <p className="text-2xl font-medium mt-2">{completionRates.total > 0 ? (completionRates.early / completionRates.total * 100).toFixed(0) : 0}%</p>
+                      <p className="text-muted-foreground">Completed early</p>
+                    </div>
+                  </span> 
                 </div>
               </section>
+              
             </DrawerBody>
           </DrawerContent>
         </Drawer>
       }
 
-      {isChatOpen &&
-
+      {
+        isChatOpen &&
         <Drawer
           size="xl"
           isOpen={isChatOpen}
@@ -537,7 +527,6 @@ export default function DashboardPage() {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-
       }
 
       <nav className="w-full flex justify-center border-b border-b-foreground/10 bg-background h-fit py-1 " >
@@ -569,7 +558,6 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-
       <section className="flex w-full justify-evenly">
         <div className="flex-1 w-full max-w-3xl px-5 mx-auto flex flex-col pt-16 pb-20">
           <section className="flex flex-col gap-6" >
@@ -578,18 +566,16 @@ export default function DashboardPage() {
             </section>
 
             {/* Desktop Dashboard Statistics  */}
-            <section className="flex flex-col sm:grid sm:grid-flow-cols sm:grid-cols-3 sm:grid-rows-2 gap-4 sm:max-h-[320px]">
-
-              <div className="flex flex-col col-span-2 bg-card rounded-md p-4">
+            <section className="flex flex-col sm:grid sm:grid-flow-cols sm:grid-cols-2 sm:grid-rows-2 gap-4 sm:max-h-[320px]">
+              <div className="flex flex-col row-span-1 col-span-2 bg-card border-2 rounded-xl p-6">
                 <h3 className="text-lg font-medium">Today's Progress</h3>
                 <p className="text-muted-foreground text-sm">Stay on top of your game!</p>
                 <Progress
                   aria-label="progress"
-                  size="lg"
-                  radius="none"
+                  size="md"
                   color="success"
                   classNames={{
-                    track: "rounded-xs rounded-sm bg-accent",
+                    track: "rounded-xl bg-accent",
                     value: "text-xl font-semibold text-muted-foreground w-full text-right align-end",
                     indicator: "rounded-sm"
                   }}
@@ -598,39 +584,51 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div className="hidden h-32 sm:flex sm:flex-col justify-between sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-3 col-start-3">
+              <div className="hidden h-48 sm:flex sm:flex-col justify-between bg-card border-2 rounded-xl p-6 row-start-2 col-span-1 col-start-2">
                 <article>
                   <h3 className="text-lg font-medium">Completion History</h3>
                   <p className="text-muted-foreground text-sm">Past 7 days</p>
                 </article>
 
-                <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} weekHabits={weekHabits} />
+                {
+                  isLoadingCompletionHistory ? 
+                  <Skeleton className="rounded-lg w-full">
+                    <div className="h-8 w-full bg-accent" />
+                  </Skeleton> 
+                  : 
+                  <CompletionHistoryLineChart completionHistory={completionHistory} todayHabits={todayHabits} upcomingHabits={upcomingHabits} />
+                }
               </div>
 
-              <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-1">
-                <span className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Total Habits</h3>
-
-                  <Link href={"/dashboard/profile"} className="text-sm px-2 py-1 bg-accent items-center text-muted-foreground rounded-md">
-                    manage
-                  </Link>
+              <div className="hidden h-48 sm:block bg-card border-2 rounded-xl p-6 col-span-1 row-span-2 col-start-1">
+                <span className="flex gap-4 items-start">
+                  <Dumbbell size={46} className="text-blue-500 bg-blue-600/20 p-3 rounded-xl"/>
+                  <header>
+                    <h3 className="text-lg font-medium">Completion Rate</h3>
+                    <p className="text-sm text-muted-foreground">Total averages</p>
+                  </header>
                 </span>
-                <p className="font-semibold text-6xl mt-4">0</p>
-              </div>
 
-              <div className="hidden h-32 sm:block sm:h-auto bg-card rounded-md p-4 col-span-1 row-span-2 col-start-2">
-                <span className="flex justify-between items-center">
-                  <h3 className="text-lg font-medium">Streak</h3>
-                  <div className="p-2 bg-warning/25 rounded-full items-center">
-                    <Flame size={20} className="text-warning" />
+                <span className="flex justify-between mt-6">
+                  <div className="w-full">
+                    <span>
+                      <p className="text-2xl font-medium mt-2">{completionRates.total > 0 ? (completionRates.onTime / completionRates.total * 100).toFixed(0) : 0}%</p>
+                      <p className="text-muted-foreground">On time</p>
+                    </span>
                   </div>
-                </span>
-                {hasStreak ? <p className="font-semibold text-6xl mt-4">{streak}</p> : <Button className="mt-4" onClick={async () => { await initializeStreak() }}>start streak</Button>}
+                 
+                  <Divider orientation="vertical" className="border-2"/>
+                  <div className="w-full">
+                    <p className="text-2xl font-medium mt-2">{completionRates.total > 0 ? (completionRates.early / completionRates.total * 100).toFixed(0) : 0}%</p>
+                    <p className="text-muted-foreground">Completed early</p>
+                  </div>
+                </span> 
               </div>
+
             </section>
           </section>
 
-          <section className="flex items-center gap-3 justify-between mt-12">
+          <section className="flex items-center gap-3 justify-between mt-24">
             <Tabs
               key="tournament_type"
               aria-label="Options"
@@ -641,13 +639,13 @@ export default function DashboardPage() {
               onSelectionChange={(key) => setSelected(key.toString())}
             >
               <Tab key="Today" title="Today" className="w-fit" />
-              <Tab key="This Week" title="This Week" className="w-fit" />
+              <Tab key="Upcoming" title="Upcoming" className="w-fit" />
             </Tabs>
 
             <span className="flex w-fit justify-between gap-4">
               {/* <Button className="bg-secondary hover:bg-secondary text-white">Ask AI</Button> */}
-              <Button variant="default" size="sm" onClick={() => setIsAddModalOpen(true)}>
-                Add Habit
+              <Button variant="secondary" className="text-white" onClick={() => setIsAddModalOpen(true)}>
+                  Add Habit
               </Button>
             </span>
           </section>
@@ -660,9 +658,6 @@ export default function DashboardPage() {
                     key={habit.id}
                     habit={habit}
                     type="today"
-                    toggleCompleteHabit={toggleCompleteHabit}
-                    editHabit={editHabit}
-                    deleteHabit={deleteHabit}
                   />
                 )}
               </ul>
@@ -671,12 +666,12 @@ export default function DashboardPage() {
 
               <section className="flex flex-col gap-6 mt-8">
                 {/* Spread the map into an array <day,habits>[] pairs and render habits for each day */}
-                {[...weekHabits.entries()].map(([day, habits], index) =>
+                {[...upcomingHabits.entries()].map(([month, habits], index) =>
 
                   <div key={index}>
                     <span className="flex w-full justify-between">
                       <div className="flex gap-2 items-center">
-                        <h2 className="font-medium">{day}</h2>
+                        <h2 className="font-medium">{month}</h2>
                       </div>
                       <p className="text-muted-foreground text-sm">{habits.length} {habits.length !== 1 ? "habits" : "habit"}</p>
                     </span>
@@ -686,9 +681,6 @@ export default function DashboardPage() {
                           key={habit.id}
                           habit={habit}
                           type="this_week"
-                          toggleCompleteHabit={toggleCompleteHabit}
-                          editHabit={editHabit}
-                          deleteHabit={deleteHabit}
                         />
                       ))}
                     </section>

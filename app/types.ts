@@ -1,5 +1,3 @@
-import { toggleCompleteHabitMutationResult, deleteHabitMutationResult, updateHabitMutationResult } from "./hooks/useHabits";
-
 export enum Day {
 	Mon = "mon",
 	Tue = "tue",
@@ -53,7 +51,4 @@ export type Error = {
 export type HabitCardProps = {
     habit: Habit;
     type: string;
-    toggleCompleteHabit: toggleCompleteHabitMutationResult,
-    editHabit: updateHabitMutationResult,
-    deleteHabit: deleteHabitMutationResult,
 }

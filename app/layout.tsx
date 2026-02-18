@@ -31,7 +31,6 @@ const leagueSpartan = League_Spartan({
 // Create a client
 const queryClient = new QueryClient()
 
-
 export default function RootLayout({
   children,
 }: Readonly<{

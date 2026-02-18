@@ -1,3 +1,5 @@
+"use client";
+
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import Link from "next/link";
 import { DashboardAuthButton } from "@/components/dashboard-auth-button";
@@ -10,9 +12,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Menu } from "lucide-react";
-import HabitProvider from "../context/habit-context";
-import UserProvider from "../context/user-context";
 import ToastProviders from "./toast-provider";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function ProtectedLayout({
   children,
@@ -20,6 +22,13 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
 
+  const router = useRouter();
+    const logout = async () => {
+      const supabase = await createClient();
+      await supabase.auth.signOut();
+      router.push("/");
+    };
+  
   return (
     <main>
       <div className="flex-1 w-full flex flex-col items-center">
@@ -31,11 +40,11 @@ export default function ProtectedLayout({
               <Link href={"/"} className="text-base font-medium">Stacked</Link>
             </span>
 
-            <DropdownMenu >
+            <DropdownMenu>
               <DropdownMenuTrigger>
                 <Menu size={24} className="bg-muted p-1 text-primary w-6 h-6 p-1 rounded-md border-b border-b-foreground/10" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="w-40">
                 <DropdownMenuLabel>Menu</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
@@ -46,20 +55,17 @@ export default function ProtectedLayout({
                 </DropdownMenuItem>
 
                 <DropdownMenuItem>
-                  <DashboardAuthButton />
+                  <button onClick={logout} className="w-full text-left">Sign out</button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </nav>
 
-        <UserProvider>
-          <HabitProvider>
-            <ToastProviders>
-              {children}
-            </ToastProviders>
-          </HabitProvider>
-        </UserProvider>
+        <ToastProviders>
+          {children}
+        </ToastProviders>
+
 
         <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
           <p>
