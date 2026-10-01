@@ -32,7 +32,7 @@ export default function Home() {
                 objectFit="contain"
                 width={800}
                 height={800}
-                className="rounded-md"
+                className="rounded-xl"
               />
             </div>
 
@@ -75,14 +75,14 @@ export default function Home() {
               </p>
             </article>
 
-            <div className="max-w-[500px]">
+            <div className="max-w-[700px]">
               <Image
                 src={"/dashboard-stats-dark.png"}
                 alt="dashboard stats"
                 objectFit="contain"
                 width={800}
                 height={800}
-                className="rounded-md"
+                className="rounded-xl"
               />
             </div>
           </section>
